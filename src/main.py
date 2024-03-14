@@ -75,11 +75,11 @@ async def tag_member_command(interaction: discord.Interaction):
 
 @tree.command(name="untag", description="投稿からメンバーのタグ付けを外します")
 async def untag_member_command(interaction: discord.Interaction):
-    await interaction.response.send_message(ephemeral=True, view=UntagMemberView1, embed=EmbedHandler(step=1, mode='untag').get_embed())
+    await interaction.response.send_message(ephemeral=True, view=UntagMemberView1(), embed=EmbedHandler(step=1, mode='untag').get_embed())
 
 @tree.command(name="tagged_posts", description="タグ付けされている投稿を表示します")
 async def get_tagged_posts_command(interaction: discord.Interaction):
-    await interaction.response.send_message(ephemeral=True, view=GetTaggedPostsView, embed=EmbedHandler(step=1, mode='get_tagged_posts').get_embed())
+    await interaction.response.send_message(ephemeral=True, view=GetTaggedPostsView(), embed=EmbedHandler(step=1, mode='get_tagged_posts').get_embed())
 
 
 secret_token = str(os.getenv('SECRET_TOKEN'))
