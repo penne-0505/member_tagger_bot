@@ -50,6 +50,7 @@ async def ping(interaction: discord.Interaction):
         'Message Author ID': f'{interaction.user.id}',
     }
     await interaction.response.send_message(
+        ephemeral=True,
         embed=discord.Embed(
             title='Pong!',
             description='\n'.join([f'**{key}**: {value}' for key, value in to_be_shown_data.items()]),
@@ -66,7 +67,7 @@ async def help(interaction: discord.Interaction):
         description='\n'.join([f'**`/{command}`** :  {description}' for command, description in commands.items()]),
         color=discord.Color.blue()
     )
-    await interaction.response.send_message(embed=embed)
+    await interaction.response.send_message(ephemeral=True, embed=embed)
 
 @tree.command(name="tag", description="投稿にメンバーをタグ付けします")
 async def tag_member_command(interaction: discord.Interaction):
