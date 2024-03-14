@@ -19,9 +19,10 @@ class EmbedHandler:
     
     #### Creating an error embed
     ```python
+    embed = EmbedHandler(mode='{something}', step=0).get_embed()
     embed = EmbedHandler(mode='error').get_embed()
     embed = EmbedHandler().get_embed_error()
-    # Both are the same
+    # All are the same
     ```
     - get_embed_error, get_embed_cancel, get_embed_success, and get_embed_interaction_error are also available
     
