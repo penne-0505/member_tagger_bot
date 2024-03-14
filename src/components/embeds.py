@@ -4,7 +4,34 @@ import discord
 
 
 class EmbedHandler:
-    def __init__(self, step: int, mode: str, posts: dict[dict[str, str]] = None, interaction: discord.Interaction = None):
+    '''
+    EmbedHandler class
+    
+    ### Overview
+    EmbedHandler class is a class that handles the creation of embeds for the bot.
+    
+    ### Example
+    
+    #### Creating a basic embed
+    ```python
+    embed = EmbedHandler(mode='tag', step=1).get_embed()
+    ```
+    
+    #### Creating an error embed
+    ```python
+    embed = EmbedHandler(mode='error').get_embed()
+    embed = EmbedHandler().get_embed_error()
+    # Both are the same
+    ```
+    - get_embed_error, get_embed_cancel, get_embed_success, and get_embed_interaction_error are also available
+    
+    ### Arguments
+    - `mode` : str : The mode of the embed.
+    - `step` : int : The step of the embed.
+    - `posts` : dict[dict[str, str]] : The posts to be displayed in the embed.
+    - `interaction` : discord.Interaction : The interaction object.
+    '''
+    def __init__(self, mode: str = None, step: int = None, posts: dict[dict[str, str]] = None, interaction: discord.Interaction = None):
         self.step = step
         self.mode = mode
         self.posts = posts
@@ -73,6 +100,18 @@ class EmbedHandler:
             else:
                 embed = self.get_embed_error()
 
+        elif self.mode == 'error':
+            embed = self.get_embed_error()
+        
+        elif self.mode == 'cancelled':
+            embed = self.get_embed_cancel()
+        
+        elif self.mode == 'success':
+            embed = self.get_embed_success()
+        
+        elif self.mode == 'interaction_error':
+            embed = self.get_embed_interaction_error()
+        
         else:
             embed = self.get_embed_error()
 
@@ -84,7 +123,7 @@ class EmbedHandler:
             color=discord.Color.red()
         )
 
-    def get_embed_cancelled(self):
+    def get_embed_cancel(self):
         return discord.Embed(
             title='操作がキャンセルされました (cancelled)',
             color=discord.Color.blue()
