@@ -2,8 +2,6 @@ import datetime
 
 import discord
 
-from db_handler import MemberTaggerDBHandler
-
 
 class EmbedHandler:
     def __init__(self, step: int, mode: str, posts: dict[dict[str, str]] = None, interaction: discord.Interaction = None):
