@@ -97,7 +97,7 @@ class GetTaggedPostsSelect(discord.ui.UserSelect):
         self.on_error = on_error
     
     async def callback(self, interaction: discord.Interaction):
-        selected_member = interaction.data['values'][0]
+        selected_member = str(interaction.data['values'][0])
         posts = handler.get_tagged_posts(selected_member)
         await interaction.response.edit_message(embeds=[EmbedHandler(mode='get_tagged_posts', step=2, posts=posts, interaction=interaction).get_embed()])
 
