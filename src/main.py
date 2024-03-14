@@ -59,11 +59,11 @@ async def ping(interaction: discord.Interaction):
 
 @tree.command(name='help', description='コマンド一覧を表示します')
 async def help(interaction: discord.Interaction):
-    commands = {command.name: command.description for command in await tree.get_commands()}
+    commands = {command.name: command.description for command in tree.get_commands()}
     commands['ping'] = '通信や処理にかかった時間を返します'
     embed = discord.Embed(
         title='コマンド一覧',
-        description='\n'.join([f'`**/{command}**`: {description}' for command, description in commands.items()]),
+        description='\n'.join([f'**`/{command}`** :  {description}' for command, description in commands.items()]),
         color=discord.Color.blue()
     )
     await interaction.response.send_message(embed=embed)
