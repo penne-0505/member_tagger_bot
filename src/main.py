@@ -35,7 +35,7 @@ class Client(discord.Client):
         self.synced = True
     
     async def set_presence(self):
-        await self.change_presence(activity=discord.CustomActivity(name='Type it: /help', type=discord.ActivityType.listening))
+        await self.change_presence(activity=discord.CustomActivity(name='/help', type=discord.ActivityType.listening))
 
 
 client = Client()
