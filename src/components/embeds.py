@@ -101,8 +101,6 @@ class EmbedHandler:
                     color=discord.Color.blue()
                 )
             elif self.step == 2:
-                self.posts = self.posts.pop('member_id', None)
-                print(self.posts)
                 target_channels_id = [int(post) for post in self.posts.keys()]
                 target_channels = [self.interaction.guild.get_thread(channel_id) for channel_id in target_channels_id]
                 channels_deadline = [deadline for deadline in self.posts.values()]
