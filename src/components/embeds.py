@@ -33,7 +33,7 @@ class EmbedHandler:
     - `posts` : dict[dict[str, str]] : The posts to be displayed in the embed.
     - `interaction` : discord.Interaction : The interaction object.
     '''
-    def __init__(self, mode: str = None, step: int = None, posts: dict[dict[str, str]] = None, interaction: discord.Interaction = None):
+    def __init__(self, mode: str = None, step: int = None, posts: dict[str, str] = None, interaction: discord.Interaction = None):
         self.step = step
         self.mode = mode
         self.posts = posts
@@ -102,6 +102,7 @@ class EmbedHandler:
                 )
             elif self.step == 2:
                 self.posts = self.posts.pop('member_id', None)
+                print(self.posts)
                 target_channels_id = [int(post) for post in self.posts.keys()]
                 target_channels = [self.interaction.guild.get_thread(channel_id) for channel_id in target_channels_id]
                 channels_deadline = [deadline for deadline in self.posts.values()]

@@ -100,7 +100,7 @@ class GetTaggedPostsSelect(discord.ui.UserSelect):
     async def callback(self, interaction: discord.Interaction):
         selected_member = str(interaction.data['values'][0])
         posts = handler.get_tagged_posts(selected_member)
-        await interaction.response.edit_message(embeds=[EmbedHandler(mode='get_tagged_posts', step=2, posts=posts, interaction=interaction).get_embed()])
+        await interaction.response.edit_message(embed=EmbedHandler(mode='get_tagged_posts', step=2, posts=posts, interaction=interaction).get_embed())
 
 class CancelButton(discord.ui.Button):
     def __init__(self):
@@ -153,4 +153,4 @@ class UntagMemberView2(discord.ui.View):
 class GetTaggedPostsView(discord.ui.View):
     def __init__(self):
         super().__init__()
-        self.add_item(GetTaggedPostsSelect()) 
+        self.add_item(GetTaggedPostsSelect())
