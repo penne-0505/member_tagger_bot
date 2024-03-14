@@ -99,6 +99,8 @@ class EmbedHandler:
                     color=discord.Color.green(),
                 )
             else:
+                if not self.step:
+                    embed = self.get_embed_error()
                 embed = self.get_embed_error()
 
         elif self.mode == 'error':
@@ -118,28 +120,31 @@ class EmbedHandler:
 
         return embed
 
-    def get_embed_error(self):
+    def get_embed_error(self, title: str = None, description: str = None):
         return discord.Embed(
-            title='エラーが発生しました (exception error)',
+            title='エラーが発生しました (exception error)' if not title else title,
+            description='もう一度やり直してください。何度もエラーが出る場合は管理者に連絡してください' if not description else description,
             color=discord.Color.red()
         )
 
-    def get_embed_cancel(self):
+    def get_embed_cancel(self, title: str = None, description: str = None):
         return discord.Embed(
-            title='操作がキャンセルされました (cancelled)',
+            title='操作がキャンセルされました (cancelled)' if not title else title,
+            description=None if not description else description,
             color=discord.Color.blue()
         )
 
-    def get_embed_success(self, task: str = None):
+    def get_embed_success(self, task: str = None, title: str = None, description: str = None):
         task = task if task else '処理'
         return discord.Embed(
-            title=f'{task}が完了しました',
+            title=f'{task}が完了しました' if not title else title,
+            description=None if not description else description,
             color=discord.Color.green()
         )
 
-    def get_embed_interaction_error(self):
+    def get_embed_interaction_error(self, title: str = None, description: str = None):
         return discord.Embed(
-            title='エラーが発生しました (interaction author error)',
-            description='UIの操作はコマンド実行者のみが行えます',
+            title='エラーが発生しました (interaction author error)' if not title else title,
+            description='UIの操作はコマンド実行者のみが行えます' if not description else description,
             color=discord.Color.red()
         )
