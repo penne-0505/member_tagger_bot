@@ -2,6 +2,7 @@ import datetime
 
 import discord
 
+# TODO: implement better variable type validation
 
 class EmbedHandler:
     '''
@@ -61,7 +62,13 @@ class EmbedHandler:
             elif self.step == 4:
                 embed = self.get_embed_success('タグ付け')
             else:
-                embed = self.get_embed_error()
+                # i think there's better way to handle this(but even if you display the error text as it is to the user...)
+                if not self.step:
+                    embed = self.get_embed_error(title='エラーが発生しました (step is None or invalid)')
+                elif not self.interaction:
+                    embed = self.get_embed_error(title='エラーが発生しました (interaction is None or invalid)')
+                else:
+                    embed = self.get_embed_error(title='エラーが発生しました (unknown error)')
 
         elif self.mode == 'untag':
             if self.step == 1:
@@ -79,7 +86,12 @@ class EmbedHandler:
             elif self.step == 3:
                 embed = self.get_embed_success('タグ付けの解除')
             else:
-                embed = self.get_embed_error()
+                if not self.step:
+                    embed = self.get_embed_error(title='エラーが発生しました (step is None or invalid)')
+                elif not self.interaction:
+                    embed = self.get_embed_error(title='エラーが発生しました (interaction is None or invalid)')
+                else:
+                    embed = self.get_embed_error(title='エラーが発生しました (unknown error)')
 
         elif self.mode == 'get_tagged_posts':
             if self.step == 1:
@@ -99,10 +111,16 @@ class EmbedHandler:
                     color=discord.Color.green(),
                 )
             else:
+                
                 if not self.step:
-                    embed = self.get_embed_error()
-                embed = self.get_embed_error()
-
+                    embed = self.get_embed_error(title='エラーが発生しました (step is None or invalid)')
+                elif not self.posts:
+                    embed = self.get_embed_error(title='エラーが発生しました (posts is None or invalid)')
+                elif not self.interaction:
+                    embed = self.get_embed_error(title='エラーが発生しました (interaction is None or invalid)')
+                else:
+                    embed = self.get_embed_error(title='エラーが発生しました (unknown error)')
+            
         elif self.mode == 'error':
             embed = self.get_embed_error()
         
@@ -116,7 +134,7 @@ class EmbedHandler:
             embed = self.get_embed_interaction_error()
         
         else:
-            embed = self.get_embed_error()
+            embed = self.get_embed_error(title='エラーが発生しました (mode is None or invalid)')
 
         return embed
 
