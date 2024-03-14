@@ -2,7 +2,7 @@ import datetime
 
 import discord
 
-from embeds import EmbedHandler
+from components.embeds import EmbedHandler
 from db_handler import MemberTaggerDBHandler as DBHandler
 
 
