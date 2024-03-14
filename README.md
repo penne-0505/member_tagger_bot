@@ -30,7 +30,7 @@ A Discord bot that associates members in the guild with threads. This bot allows
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit pull requests or open issues for any improvements or bug fixes.
+Contributing is welcome! However, since I myself am quite ignorant about software development, Git and Github, the procedure may not be as smooth as other OSS and projects.
 
 ## License
 
