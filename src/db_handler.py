@@ -71,7 +71,7 @@ class MemberTaggerDBHandler(DBHandler):
             item[post_id] = deadline
             self.put(item)
         else:
-            self.put({'member_id': member_id, 'post_id': post_id, 'deadline': deadline})
+            self.put({'member_id': member_id, post_id: deadline})
 
     def untag_member(self, member_id: str, post_id: str):
         item = self.get({'member_id': member_id})
