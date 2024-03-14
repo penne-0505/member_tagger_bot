@@ -1,0 +1,3 @@
+# FILEPATH: /d:/dev/projects/member_tagger/.gitignore
+.env/
+__pycache__/
