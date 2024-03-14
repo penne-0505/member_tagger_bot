@@ -86,6 +86,7 @@ class DeadlineSelect(discord.ui.Select):
         except Exception as e:
             await interaction.response.edit_message(view=None, embed=EmbedHandler(step=0, mode='tag').get_embed())
 
+# TODO: 複数のメンバーを選択出来るようにする
 class GetTaggedPostsSelect(discord.ui.UserSelect):
     def __init__(self):
         super().__init__(
