@@ -78,7 +78,7 @@ class DeadlineSelect(discord.ui.Select):
         self.on_error = on_error
     
     async def callback(self, interaction: discord.Interaction):
-        deadline = str(datetime.datetime.now() + datetime.timedelta(days=float(interaction.data['values'][0])))
+        deadline = (datetime.datetime.now() + datetime.timedelta(days=float(interaction.data['values'][0]))).strftime('%Y-%m-%d')
         try:
             for member in self.members:
                 for channel in self.channels:
@@ -100,8 +100,7 @@ class GetTaggedPostsSelect(discord.ui.UserSelect):
     
     async def callback(self, interaction: discord.Interaction):
         selected_member = str(interaction.data['values'][0])
-        posts = await asyncio.to_thread(handler.get_tagged_posts, selected_member)
-        print(posts)
+        posts = handler.get_tagged_posts(selected_member)
         await interaction.response.edit_message(embed=EmbedHandler(mode='get_tagged_posts', step=2, posts=posts, interaction=interaction).get_embed())
 
 class CancelButton(discord.ui.Button):
