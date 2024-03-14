@@ -88,6 +88,15 @@ class MemberTaggerDBHandler(DBHandler):
             return result
         return None
 
+    def get_tagged_members(self, post_id: str) -> Dict[str, str] | None:
+        items = self.table.scan().get('Items', [])
+        result = {}
+        for item in items:
+            member_id = item.pop('member_id')
+            if post_id in item:
+                result[member_id] = item[post_id]
+        return result
+
     def get_deadline(self, member_id: str, post_id: str) -> str | None:
         item = self.get({'member_id': member_id})
         return item.get(post_id, None)
