@@ -6,7 +6,7 @@ from colorama import Fore, Style
 
 from db_handler import MemberTaggerDBHandler as DBHandler
 from components.embeds import EmbedHandler
-from components.views import TagMemberView1, UntagMemberView1, GetTaggedPostsView
+from components.views import TagMemberView1, UntagMemberView1, GetTaggedPostsView, GetTaggedMembersView
 
 
 intents = discord.Intents.all()
@@ -72,6 +72,7 @@ async def help(interaction: discord.Interaction):
 async def tag_member_command(interaction: discord.Interaction):
     await interaction.response.send_message(ephemeral=True, view=TagMemberView1(), embed=EmbedHandler(step=1, mode='tag').get_embed())
 
+# TODO: 可能ならば、untagのmember_selectで、tagされているメンバーのみを表示するようにする
 @tree.command(name="untag", description="投稿からメンバーのタグ付けを外します")
 async def untag_member_command(interaction: discord.Interaction):
     await interaction.response.send_message(ephemeral=True, view=UntagMemberView1(), embed=EmbedHandler(step=1, mode='untag').get_embed())
@@ -82,7 +83,8 @@ async def get_tagged_posts_command(interaction: discord.Interaction):
 
 @tree.command(name="tagged_members", description="スレッドにタグ付けされているメンバーを表示します")
 async def get_tagged_members_command(interaction: discord.Interaction):
-    pass
+    await interaction.response.send_message(ephemeral=True, view=GetTaggedMembersView(), embed=EmbedHandler(step=1, mode='get_tagged_members').get_embed())
+
 
 secret_token = str(os.getenv('SECRET_TOKEN'))
 client.run(secret_token)
