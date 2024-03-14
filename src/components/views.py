@@ -77,7 +77,7 @@ class DeadlineSelect(discord.ui.Select):
         self.on_error = on_error
     
     async def callback(self, interaction: discord.Interaction):
-        deadline = datetime.datetime.now() + datetime.timedelta(days=float(interaction.data['values'][0]))
+        deadline = str(datetime.datetime.now() + datetime.timedelta(days=float(interaction.data['values'][0])))
         try:
             for member in self.members:
                 for channel in self.channels:
