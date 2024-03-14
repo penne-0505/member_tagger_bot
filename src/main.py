@@ -46,7 +46,6 @@ tree = discord.app_commands.CommandTree(client)
 async def ping(interaction: discord.Interaction):
     to_be_shown_data = {
         'Websocket Latency': round(client.latency * 1000),
-        'API Latency': round(client.ws.latency * 1000),
         'Message Author': f'{interaction.user.name}',
         'Message Author ID': f'{interaction.user.id}',
     }
