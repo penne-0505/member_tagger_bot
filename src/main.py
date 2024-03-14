@@ -6,7 +6,7 @@ from colorama import Fore, Style
 
 from db_handler import MemberTaggerDBHandler as DBHandler
 from components.embeds import EmbedHandler
-from components.views import ViewHandler
+from components.views import TagMemberView1, UntagMemberView1, GetTaggedPostsView
 
 
 intents = discord.Intents.all()
@@ -71,15 +71,15 @@ async def help(interaction: discord.Interaction):
 
 @tree.command(name="tag", description="投稿にメンバーをタグ付けします")
 async def tag_member_command(interaction: discord.Interaction):
-    await interaction.response.send_message(ephemeral=True, view=ViewHandler(current_mode='tag', step=1), embed=EmbedHandler(step=1, mode='tag').get_embed())
+    await interaction.response.send_message(ephemeral=True, view=TagMemberView1(), embed=EmbedHandler(step=1, mode='tag').get_embed())
 
 @tree.command(name="untag", description="投稿からメンバーのタグ付けを外します")
 async def untag_member_command(interaction: discord.Interaction):
-    await interaction.response.send_message(ephemeral=True, view=ViewHandler(current_mode='untag', step=1), embed=EmbedHandler(step=1, mode='untag').get_embed())
+    await interaction.response.send_message(ephemeral=True, view=UntagMemberView1, embed=EmbedHandler(step=1, mode='untag').get_embed())
 
 @tree.command(name="tagged_posts", description="タグ付けされている投稿を表示します")
 async def get_tagged_posts_command(interaction: discord.Interaction):
-    await interaction.response.send_message(ephemeral=True, view=ViewHandler(current_mode='get_tagged_posts', step=1), embed=EmbedHandler(step=1, mode='get_tagged_posts').get_embed())
+    await interaction.response.send_message(ephemeral=True, view=GetTaggedPostsView, embed=EmbedHandler(step=1, mode='get_tagged_posts').get_embed())
 
 
 secret_token = str(os.getenv('SECRET_TOKEN'))
