@@ -103,6 +103,27 @@ class GetTaggedPostsSelect(discord.ui.UserSelect):
         posts = handler.get_tagged_posts(selected_member)
         await interaction.response.edit_message(embed=EmbedHandler(mode='get_tagged_posts', step=2, posts=posts, interaction=interaction).get_embed())
 
+
+class GetTaggedMembersSelect(discord.ui.ChannelSelect):
+    def __init__(self):
+        super().__init__(
+            placeholder='投稿またはチャンネルを選択してください',
+            min_values=1,
+            max_values=25,
+            channel_types=[
+                discord.ChannelType.public_thread,
+                discord.ChannelType.private_thread,
+            ],
+        )
+        self.interaction_check = interaction_check
+        self.on_error = on_error
+    
+    async def callback(self, interaction: discord.Interaction):
+        channels = interaction.data['values']
+        members = handler.get_tagged_members(channels)
+        await interaction.response.edit_message(embed=EmbedHandler(mode='get_tagged_members', step=2, members=members, interaction=interaction).get_embed())
+
+
 class CancelButton(discord.ui.Button):
     def __init__(self):
         super().__init__(label='キャンセル', style=discord.ButtonStyle.secondary)
@@ -155,3 +176,9 @@ class GetTaggedPostsView(discord.ui.View):
     def __init__(self):
         super().__init__()
         self.add_item(GetTaggedPostsSelect())
+
+
+class GetTaggedMembersView(discord.ui.View):
+    def __init__(self):
+        super().__init__()
+        self.add_item(GetTaggedMembersSelect())
