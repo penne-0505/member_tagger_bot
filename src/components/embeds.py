@@ -119,7 +119,33 @@ class EmbedHandler:
                     embed = self.get_embed_error(title='エラーが発生しました (interaction is None or invalid)')
                 else:
                     embed = self.get_embed_error(title='エラーが発生しました (unknown error)')
-            
+
+        elif self.mode == 'get_tagged_members':
+            if self.step == 1:
+                embed = discord.Embed(
+                    title='1. チャンネルを選択',
+                    description='タグ付けされたメンバーを表示するチャンネルを選択してください',
+                    color=discord.Color.blue()
+                )
+            elif self.step == 2:
+                target_members_id = [int(member) for member in self.posts.keys()]
+                target_members = [self.interaction.guild.get_member(member_id) for member_id in target_members_id]
+                members_deadline = [deadline for deadline in self.posts.values()]
+                self.members = [f'・{member.mention} \n    提出期限 : {deadline}\n    残り : {str((datetime.datetime.strptime(deadline, "%Y-%m-%d") - datetime.datetime.now()).days)} 日' for member, deadline in zip(target_members, members_deadline)]
+                embed = discord.Embed(
+                    title='**取得結果：**\n' + '\n\n'.join([f'{post}' for post in self.members]),
+                    color=discord.Color.green(),
+                )
+            else:
+                if not self.step:
+                    embed = self.get_embed_error(title='エラーが発生しました (step is None or invalid)')
+                elif not self.posts:
+                    embed = self.get_embed_error(title='エラーが発生しました (posts is None or invalid)')
+                elif not self.interaction:
+                    embed = self.get_embed_error(title='エラーが発生しました (interaction is None or invalid)')
+                else:
+                    embed = self.get_embed_error(title='エラーが発生しました (unknown error)')
+
         elif self.mode == 'error':
             embed = self.get_embed_error()
         
