@@ -100,7 +100,8 @@ class GetTaggedPostsSelect(discord.ui.UserSelect):
     
     async def callback(self, interaction: discord.Interaction):
         selected_member = str(interaction.data['values'][0])
-        posts = await asyncio.get_event_loop().create_task(handler.get_tagged_posts(selected_member))
+        posts = await asyncio.to_thread(handler.get_tagged_posts, selected_member)
+        print(posts)
         await interaction.response.edit_message(embed=EmbedHandler(mode='get_tagged_posts', step=2, posts=posts, interaction=interaction).get_embed())
 
 class CancelButton(discord.ui.Button):
