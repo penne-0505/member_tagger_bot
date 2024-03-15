@@ -1,6 +1,7 @@
-# based python 3.12, pip install requirements
-FROM python:3.12
-WORKDIR /
-COPY requirements.txt .
+FROM python:3.11
+WORKDIR /bot
+COPY requirements.txt /bot/
 RUN pip install -r requirements.txt
-CMD ["cd", "src", "&&", "python", "main.py"]
+COPY . /bot
+# cd to src, then run the bot
+CMD ["python", "src/main.py"]
