@@ -1,5 +1,5 @@
 import os
-import logging
+import asyncio
 
 import discord
 from colorama import Fore, Style
@@ -27,6 +27,8 @@ class Client(discord.Client):
         await self.set_presence()
         print(Fore.BLUE + f'Logged in as {self.user.name} ({self.user.id})' + Style.RESET_ALL)
         print(Fore.GREEN + 'Bot is ready' + Style.RESET_ALL)
+        self.loop.create_task(self.keep_alive())
+        print(Fore.GREEN + 'Keep alive task started' + Style.RESET_ALL)
     
     async def sync_commands(self):
         if self.synced:
@@ -36,6 +38,14 @@ class Client(discord.Client):
     
     async def set_presence(self):
         await self.change_presence(activity=discord.CustomActivity(name='/help', type=discord.ActivityType.listening))
+    
+    async def keep_alive(self):
+        # 10分ごとにpingを送信(presenceの更新)
+        await self.wait_until_ready()
+        while not self.is_closed():
+            await self.change_presence(activity=discord.CustomActivity(name='/help', type=discord.ActivityType.listening))
+            print(Fore.GREEN + 'Presence updated (pinged)' + Style.RESET_ALL)
+            await asyncio.sleep(600)
 
 
 client = Client()
