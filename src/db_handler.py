@@ -1,9 +1,16 @@
-import boto3
+import os
 from typing import Any, Dict, List
+
+import boto3
 
 class DBHandler:
     def __init__(self, table_name: str | None = None):
-        self.dynamodb = boto3.resource('dynamodb')
+        self.dynamodb = boto3.resource(
+            'dynamodb',
+            region_name='ap-northeast-1',
+            aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+            aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
+            )
         self.table = self.dynamodb.Table(table_name) if table_name else None
 
     def create_table(self, table_name: str, key_schema: List[Dict[str, str]], attribute_definitions: List[Dict[str, str]], provisioned_throughput: Dict[str, int]):
