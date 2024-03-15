@@ -97,5 +97,5 @@ async def get_tagged_members_command(interaction: discord.Interaction):
     await interaction.response.send_message(ephemeral=True, view=GetTaggedMembersView(), embed=EmbedHandler(step=1, mode='get_tagged_members').get_embed())
 
 
-secret_token = str(os.getenv('SECRET_TOKEN'))
+secret_token = str(os.getenv('DISCORD_BOT_TOKEN_MT'))
 client.run(secret_token)
