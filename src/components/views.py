@@ -119,9 +119,9 @@ class GetTaggedMembersSelect(discord.ui.ChannelSelect):
         self.on_error = on_error
     
     async def callback(self, interaction: discord.Interaction):
-        channels = interaction.data['values']
-        members = handler.get_tagged_members(channels)
-        await interaction.response.edit_message(embed=EmbedHandler(mode='get_tagged_members', step=2, members=members, interaction=interaction).get_embed())
+        channels = str(interaction.data['values'][0])
+        result = handler.get_tagged_members(channels)
+        await interaction.response.edit_message(embed=EmbedHandler(mode='get_tagged_members', step=2, members=result, interaction=interaction).get_embed())
 
 
 class CancelButton(discord.ui.Button):
@@ -149,36 +149,43 @@ class TagMemberView1(discord.ui.View):
     def __init__(self):
         super().__init__()
         self.add_item(ChannelSelect(current_mode='tag'))
+        self.add_item(CancelButton())
 
 class TagMemberView2(discord.ui.View):
     def __init__(self, channels: list[str]):
         super().__init__()
         self.add_item(MemberSelect(current_mode='tag', channels=channels))
+        self.add_item(CancelButton())
 
 class TagMemberView3(discord.ui.View):
     def __init__(self, channels: list[str], members: list[str]):
         super().__init__()
         self.add_item(DeadlineSelect(channels=channels, members=members))
+        self.add_item(CancelButton())
 
 
 class UntagMemberView1(discord.ui.View):
     def __init__(self):
         super().__init__()
         self.add_item(ChannelSelect(current_mode='untag'))
+        self.add_item(CancelButton())
 
 class UntagMemberView2(discord.ui.View):
     def __init__(self, channels: list[str]):
         super().__init__()
         self.add_item(MemberSelect(current_mode='untag', channels=channels))
+        self.add_item(CancelButton())
 
 
 class GetTaggedPostsView(discord.ui.View):
     def __init__(self):
         super().__init__()
         self.add_item(GetTaggedPostsSelect())
+        self.add_item(CancelButton())
 
 
 class GetTaggedMembersView(discord.ui.View):
     def __init__(self):
         super().__init__()
         self.add_item(GetTaggedMembersSelect())
+        self.add_item(CancelButton())
