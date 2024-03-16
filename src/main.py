@@ -53,9 +53,17 @@ class Client(discord.Client):
 client = Client()
 tree = discord.app_commands.CommandTree(client)
 
+async def called_logger(command_name: str, interaction: discord.Interaction):
+    command_name = Fore.YELLOW + command_name + Style.RESET_ALL
+    user_name = Fore.BLUE + str(interaction.user.name) + Style.RESET_ALL
+    user_id = Fore.BLUE + str(interaction.user.id) + Style.RESET_ALL
+    time = Fore.MAGENTA + datetime.now().strftime("%Y/%m/%d, %H:%M:%S") + Style.RESET_ALL
+    print(f'Command {command_name} called by {user_name} ({user_id}) at {time}')
 
+# TODO: pingのembedをEmbedHandlerで作成するようにする
 @tree.command(name='ping', description='pong')
 async def ping(interaction: discord.Interaction):
+    await called_logger('ping', interaction)
     to_be_shown_data = {
         'Websocket Latency': round(client.latency * 1000),
         'Message Author': f'{interaction.user.name}',
@@ -73,6 +81,7 @@ async def ping(interaction: discord.Interaction):
 
 @tree.command(name='help', description='コマンド一覧を表示します')
 async def help(interaction: discord.Interaction):
+    await called_logger('ping', interaction)
     commands = {command.name: command.description for command in tree.get_commands()}
     commands['ping'] = '通信や処理にかかった時間を返します'
     embed = discord.Embed(
@@ -84,21 +93,24 @@ async def help(interaction: discord.Interaction):
 
 @tree.command(name="tag", description="投稿にメンバーをタグ付けします")
 async def tag_member_command(interaction: discord.Interaction):
+    await called_logger('ping', interaction)
     await interaction.response.send_message(ephemeral=True, view=TagMemberView1(), embed=EmbedHandler(step=1, mode='tag').get_embed())
 
 # TODO: 可能ならば、untagのmember_selectで、tagされているメンバーのみを表示するようにする
 @tree.command(name="untag", description="投稿からメンバーのタグ付けを外します")
 async def untag_member_command(interaction: discord.Interaction):
+    await called_logger('ping', interaction)
     await interaction.response.send_message(ephemeral=True, view=UntagMemberView1(), embed=EmbedHandler(step=1, mode='untag').get_embed())
 
 @tree.command(name="tagged_posts", description="メンバーがタグ付けされている投稿を表示します")
 async def get_tagged_posts_command(interaction: discord.Interaction):
+    await called_logger('ping', interaction)
     await interaction.response.send_message(ephemeral=True, view=GetTaggedPostsView(), embed=EmbedHandler(step=1, mode='get_tagged_posts').get_embed())
 
 @tree.command(name="tagged_members", description="スレッドにタグ付けされているメンバーを表示します")
 async def get_tagged_members_command(interaction: discord.Interaction):
+    await called_logger('ping', interaction)
     await interaction.response.send_message(ephemeral=True, view=GetTaggedMembersView(), embed=EmbedHandler(step=1, mode='get_tagged_members').get_embed())
-
 
 secret_token = str(os.getenv('DISCORD_BOT_TOKEN_MT'))
 client.run(secret_token)
