@@ -10,6 +10,16 @@ from db_handler import MemberTaggerDBHandler as DBHandler
 from components.embeds import EmbedHandler
 from components.views import TagMemberView1, UntagMemberView1, GetTaggedPostsView, GetTaggedMembersView
 
+
+# TODO: DBのローカル化(sqlite3, mysql ...)？
+# TODO: 毎日規定の時間にタグ付けされたメンバーに通知を送る機能
+# TODO: 通知のON/OFF機能
+# TODO: loggingのhandlerを設定する
+# TODO: pingのembedをEmbedHandlerで作成するようにする
+# TODO: 可能ならば、untagのmember_selectで、tagされているメンバーのみを表示するようにする
+# TODO: embedにおけるエラーハンドリング、エラーメッセージの表示をより詳細にする
+
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 intents = discord.Intents.all()
@@ -53,7 +63,6 @@ class Client(discord.Client):
 client = Client()
 tree = discord.app_commands.CommandTree(client)
 
-# TODO: loggingのhandlerを設定する
 async def called_logger(command_name: str, interaction: discord.Interaction):
     command_name = Fore.YELLOW + command_name + Style.RESET_ALL
     user_name = Fore.BLUE + str(interaction.user.name) + Style.RESET_ALL
@@ -61,7 +70,7 @@ async def called_logger(command_name: str, interaction: discord.Interaction):
     time = Fore.MAGENTA + datetime.now().strftime("%Y/%m/%d, %H:%M:%S") + Style.RESET_ALL
     logging.info(f'Command {command_name} called by {user_name} ({user_id}) at {time}')
 
-# TODO: pingのembedをEmbedHandlerで作成するようにする
+
 @tree.command(name='ping', description='pong')
 async def ping(interaction: discord.Interaction):
     await called_logger('ping', interaction)
@@ -97,7 +106,6 @@ async def tag_member_command(interaction: discord.Interaction):
     await called_logger('tag', interaction)
     await interaction.response.send_message(ephemeral=True, view=TagMemberView1(), embed=EmbedHandler(step=1, mode='tag').get_embed())
 
-# TODO: 可能ならば、untagのmember_selectで、tagされているメンバーのみを表示するようにする
 @tree.command(name="untag", description="投稿からメンバーのタグ付けを外します")
 async def untag_member_command(interaction: discord.Interaction):
     await called_logger('untag', interaction)
