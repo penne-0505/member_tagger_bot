@@ -1,6 +1,7 @@
 import os
 import asyncio
 from datetime import datetime
+import logging
 
 import discord
 from colorama import Fore, Style
@@ -9,10 +10,11 @@ from db_handler import MemberTaggerDBHandler as DBHandler
 from components.embeds import EmbedHandler
 from components.views import TagMemberView1, UntagMemberView1, GetTaggedPostsView, GetTaggedMembersView
 
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 intents = discord.Intents.all()
 handler = DBHandler()
-
 
 class Client(discord.Client):
     def __init__(self):
@@ -20,16 +22,16 @@ class Client(discord.Client):
         self.synced = False
     
     async def on_ready(self):
-        print(Fore.YELLOW + 'Bot is starting...' + Style.RESET_ALL)
-        print(Fore.YELLOW + 'Syncing commands...' + Style.RESET_ALL)
+        logging.info(Fore.YELLOW + 'Bot is starting...' + Style.RESET_ALL)
+        logging.info(Fore.YELLOW + 'Syncing commands...' + Style.RESET_ALL)
         if not self.synced:
             await self.sync_commands()
-        print(Fore.GREEN + 'Commands synced' + Style.RESET_ALL)
+        logging.info(Fore.GREEN + 'Commands synced' + Style.RESET_ALL)
         await self.set_presence()
-        print(Fore.BLUE + f'Logged in as {self.user.name} ({self.user.id})' + Style.RESET_ALL)
-        print(Fore.GREEN + 'Bot is ready' + Style.RESET_ALL)
+        logging.info(Fore.BLUE + f'Logged in as {self.user.name} ({self.user.id})' + Style.RESET_ALL)
+        logging.info(Fore.GREEN + 'Bot is ready' + Style.RESET_ALL)
         self.loop.create_task(self.keep_alive())
-        print(Fore.GREEN + 'Keep alive task started' + Style.RESET_ALL)
+        logging.info(Fore.GREEN + 'Keep alive task started' + Style.RESET_ALL)
     
     async def sync_commands(self):
         if self.synced:
@@ -46,9 +48,8 @@ class Client(discord.Client):
         while not self.is_closed():
             await self.change_presence(activity=discord.CustomActivity(name='/help', type=discord.ActivityType.listening))
             now = datetime.now().strftime('%Y/%m/%d, %H:%M:%S')
-            print(Fore.GREEN + f'Pinged at {now}' + Style.RESET_ALL)
+            logging.info(Fore.GREEN + f'Pinged at {now}' + Style.RESET_ALL)
             await asyncio.sleep(120)
-
 
 client = Client()
 tree = discord.app_commands.CommandTree(client)
@@ -58,7 +59,7 @@ async def called_logger(command_name: str, interaction: discord.Interaction):
     user_name = Fore.BLUE + str(interaction.user.name) + Style.RESET_ALL
     user_id = Fore.BLUE + str(interaction.user.id) + Style.RESET_ALL
     time = Fore.MAGENTA + datetime.now().strftime("%Y/%m/%d, %H:%M:%S") + Style.RESET_ALL
-    print(f'Command {command_name} called by {user_name} ({user_id}) at {time}')
+    logging.info(f'Command {command_name} called by {user_name} ({user_id}) at {time}')
 
 # TODO: pingのembedをEmbedHandlerで作成するようにする
 @tree.command(name='ping', description='pong')
@@ -86,7 +87,7 @@ async def help(interaction: discord.Interaction):
     commands['ping'] = '通信や処理にかかった時間を返します'
     embed = discord.Embed(
         title='コマンド一覧',
-        description='\n'.join([f'**`/{command}`** :  {description}' for command, description in commands.items()]),
+        description='\n'.join([f'**`/{command}`** : {description}' for command, description in commands.items()]),
         color=discord.Color.blue()
     )
     await interaction.response.send_message(ephemeral=True, embed=embed)
