@@ -1,7 +1,10 @@
 import os
 from typing import Any, Dict, List
+import logging
 
 import boto3
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class DBHandler:
     def __init__(self, table_name: str | None = None):
@@ -22,21 +25,21 @@ class DBHandler:
                 ProvisionedThroughput=provisioned_throughput
             )
         except Exception as e:
-            print(f"Error creating table: {e}")
+            logging.error(f"Error creating table: {e}")
 
     def put(self, item: Dict[str, Any]):
         try:
             self.table.put_item(Item=item)
             return True
         except Exception as e:
-            print(f"Error putting item: {e}")
+            logging.error(f"Error putting item: {e}")
 
     def get(self, key: Dict[str, str]) -> Dict[str, Any] | None:
         try:
             response = self.table.get_item(Key=key)
             return response.get('Item', None)
         except Exception as e:
-            print(f"Error getting item: {e}")
+            logging.error(f"Error getting item: {e}")
             return None
 
     def delete(self, key: Dict[str, str]):
@@ -44,7 +47,7 @@ class DBHandler:
             self.table.delete_item(Key=key)
             return True
         except Exception as e:
-            print(f"Error deleting item: {e}")
+            logging.error(f"Error deleting item: {e}")
 
     def update(self, key: Dict[str, str], update_expression: str, expression_attribute_values: Dict[str, Any]):
         try:
@@ -55,7 +58,7 @@ class DBHandler:
             )
             return True
         except Exception as e:
-            print(f"Error updating item: {e}")
+            logging.error(f"Error updating item: {e}")
 
     def query(self, key_condition_expression: str, expression_attribute_values: Dict[str, Any]) -> List[Dict[str, Any]]:
         try:
@@ -65,7 +68,7 @@ class DBHandler:
             )
             return response.get('Items', [])
         except Exception as e:
-            print(f"Error querying items: {e}")
+            logging.error(f"Error querying items: {e}")
             return []
 
 class MemberTaggerDBHandler(DBHandler):

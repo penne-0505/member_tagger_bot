@@ -10,7 +10,6 @@ from db_handler import MemberTaggerDBHandler as DBHandler
 from components.embeds import EmbedHandler
 from components.views import TagMemberView1, UntagMemberView1, GetTaggedPostsView, GetTaggedMembersView
 
-# Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 intents = discord.Intents.all()
