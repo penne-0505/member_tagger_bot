@@ -101,7 +101,7 @@ class MemberTaggerDBHandler(DBHandler):
     def get_tagged_members(self, post_id: str) -> Dict[str, Any]:
         items = self.table.scan().get('Items', [])
         member_ids = [item['member_id'] for item in items if str(post_id) in item]
-        deadline = str(items[0][str(post_id)])
+        deadline = str([item[str(post_id)] for item in items if str(post_id) in item][0])
         result = {'ids': member_ids, 'deadline': deadline}
         return result
 
