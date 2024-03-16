@@ -110,6 +110,10 @@ class EmbedHandler:
                 embed = discord.Embed(
                     title='**取得結果：**\n' + '\n\n'.join([f'{post}' for post in self.channels]),
                     color=discord.Color.green(),
+                ) if self.channels else discord.Embed(
+                    title='取得結果：',
+                    description='タグ付けされた投稿はありません',
+                    color=discord.Color.green(),
                 )
             else:
                 
@@ -137,6 +141,10 @@ class EmbedHandler:
                 embed = discord.Embed(
                     title='**取得結果：**',
                     description='\n'.join([f'{member}' for member in self.members]) + f'\n\n提出期限 : {deadline}\n残り : {num_of_days} 日',
+                    color=discord.Color.green(),
+                ) if self.members else discord.Embed(
+                    title='取得結果：',
+                    description='タグ付けされたメンバーはいません',
                     color=discord.Color.green(),
                 )
             else:
