@@ -131,7 +131,7 @@ class CancelButton(discord.ui.Button):
         self.on_error = on_error
     
     async def callback(self, interaction: discord.Interaction):
-        await interaction.response.edit_message(view=None, embed=EmbedHandler().get_embed_cancel())
+        await interaction.response.edit_message(view=discord.abc.MISSING, embed=EmbedHandler().get_embed_cancel())
 
 
 async def interaction_check(self, interaction: discord.Interaction):
