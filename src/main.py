@@ -1,5 +1,6 @@
 import os
 import asyncio
+from datetime import datetime
 
 import discord
 from colorama import Fore, Style
@@ -44,8 +45,9 @@ class Client(discord.Client):
         await self.wait_until_ready()
         while not self.is_closed():
             await self.change_presence(activity=discord.CustomActivity(name='/help', type=discord.ActivityType.listening))
-            print(Fore.GREEN + 'Presence updated (pinged)' + Style.RESET_ALL)
-            await asyncio.sleep(600)
+            now = datetime.now().strftime('%Y/%m/%d, %H:%M:%S')
+            print(Fore.GREEN + f'Pinged at {now}' + Style.RESET_ALL)
+            await asyncio.sleep(120)
 
 
 client = Client()
@@ -57,6 +59,7 @@ async def ping(interaction: discord.Interaction):
     to_be_shown_data = {
         'Websocket Latency': round(client.latency * 1000),
         'Message Author': f'{interaction.user.name}',
+        'Author Mention': f'{interaction.user.mention}',
         'Message Author ID': f'{interaction.user.id}',
     }
     await interaction.response.send_message(

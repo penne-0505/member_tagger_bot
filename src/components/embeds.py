@@ -1,4 +1,5 @@
 import datetime
+from typing import Any
 
 import discord
 
@@ -33,10 +34,11 @@ class EmbedHandler:
     - `posts` : dict[dict[str, str]] : The posts to be displayed in the embed.
     - `interaction` : discord.Interaction : The interaction object.
     '''
-    def __init__(self, mode: str = None, step: int = None, posts: dict[str, str] = None, interaction: discord.Interaction = None):
+    def __init__(self, mode: str = None, step: int = None, posts: dict[str, str] = None, members: dict[str, Any] = None, interaction: discord.Interaction = None):
         self.step = step
         self.mode = mode
         self.posts = posts
+        self.members = members
         self.interaction = interaction
 
     def get_embed(self):
@@ -44,13 +46,13 @@ class EmbedHandler:
             if self.step == 1:
                 embed = discord.Embed(
                     title='1. 投稿を選択',
-                    description='タグ付けを行うチャンネルを選択してください',
+                    description='タグ付けを行う投稿を選択してください',
                     color=discord.Color.blue()
                 )
             elif self.step == 2:
                 embed = discord.Embed(
                     title='2. メンバーのタグ付け',
-                    description='チャンネルにタグ付けを行うメンバーを選択してください',
+                    description='投稿にタグ付けを行うメンバーを選択してください',
                     color=discord.Color.blue()
                 )
             elif self.step == 3:
@@ -73,14 +75,14 @@ class EmbedHandler:
         elif self.mode == 'untag':
             if self.step == 1:
                 embed = discord.Embed(
-                    title='1. チャンネルを選択',
-                    description='タグ付けを解除するチャンネルを選択してください',
+                    title='1. 投稿を選択',
+                    description='タグ付けを解除する投稿を選択してください',
                     color=discord.Color.blue()
                 )
             elif self.step == 2:
                 embed = discord.Embed(
                     title='2. メンバーを選択',
-                    description='チャンネルからタグ付けを解除するメンバーを選択してください',
+                    description='投稿からタグ付けを解除するメンバーを選択してください',
                     color=discord.Color.blue()
                 )
             elif self.step == 3:
@@ -103,8 +105,8 @@ class EmbedHandler:
             elif self.step == 2:
                 target_channels_id = [int(post) for post in self.posts.keys()]
                 target_channels = [self.interaction.guild.get_thread(channel_id) for channel_id in target_channels_id]
-                channels_deadline = [deadline for deadline in self.posts.values()]
-                self.channels = [f'・{channel.mention} \n    提出期限 : {deadline}\n    残り : {str((datetime.datetime.strptime(deadline, "%Y-%m-%d") - datetime.datetime.now()).days)} 日' for channel, deadline in zip(target_channels, channels_deadline)]
+                channel_deadlines = [deadline for deadline in self.posts.values()]
+                self.channels = [f'・{channel.mention} \n    提出期限 : {deadline}\n    残り : {str((datetime.datetime.strptime(deadline, "%Y-%m-%d") - datetime.datetime.now()).days)} 日' for channel, deadline in zip(target_channels, channel_deadlines)]
                 embed = discord.Embed(
                     title='**取得結果：**\n' + '\n\n'.join([f'{post}' for post in self.channels]),
                     color=discord.Color.green(),
@@ -123,24 +125,25 @@ class EmbedHandler:
         elif self.mode == 'get_tagged_members':
             if self.step == 1:
                 embed = discord.Embed(
-                    title='1. チャンネルを選択',
-                    description='タグ付けされたメンバーを表示するチャンネルを選択してください',
+                    title='1. 投稿を選択',
+                    description='タグ付けされたメンバーを表示する投稿を選択してください',
                     color=discord.Color.blue()
                 )
             elif self.step == 2:
-                target_members_id = [int(member) for member in self.posts.keys()]
-                target_members = [self.interaction.guild.get_member(member_id) for member_id in target_members_id]
-                members_deadline = [deadline for deadline in self.posts.values()]
-                self.members = [f'・{member.mention} \n    提出期限 : {deadline}\n    残り : {str((datetime.datetime.strptime(deadline, "%Y-%m-%d") - datetime.datetime.now()).days)} 日' for member, deadline in zip(target_members, members_deadline)]
+                target_member_ids = [member for member in self.members['ids']]
+                deadline = self.members['deadline']
+                self.members = [f'・ {self.interaction.guild.get_member(int(member_id)).mention}' for member_id in target_member_ids]
+                num_of_days = str((datetime.datetime.strptime(deadline, "%Y-%m-%d") - datetime.datetime.now()).days)
                 embed = discord.Embed(
-                    title='**取得結果：**\n' + '\n\n'.join([f'{post}' for post in self.members]),
+                    title='**取得結果：**',
+                    description='\n'.join([f'{member}' for member in self.members]) + f'\n\n提出期限 : {deadline}\n残り : {num_of_days} 日',
                     color=discord.Color.green(),
                 )
             else:
                 if not self.step:
                     embed = self.get_embed_error(title='エラーが発生しました (step is None or invalid)')
-                elif not self.posts:
-                    embed = self.get_embed_error(title='エラーが発生しました (posts is None or invalid)')
+                elif not self.members:
+                    embed = self.get_embed_error(title='エラーが発生しました (members is None or invalid)')
                 elif not self.interaction:
                     embed = self.get_embed_error(title='エラーが発生しました (interaction is None or invalid)')
                 else:
