@@ -103,18 +103,18 @@ class EmbedHandler:
                     color=discord.Color.blue()
                 )
             elif self.step == 2:
-                target_channels_id = [int(post) for post in self.posts.keys()]
-                target_channels = [self.interaction.guild.get_thread(channel_id) for channel_id in target_channels_id]
-                channel_deadlines = [deadline for deadline in self.posts.values()]
-                self.channels = [f'・{channel.mention} \n    提出期限 : {deadline}\n    残り : {str((datetime.datetime.strptime(deadline, "%Y-%m-%d") - datetime.datetime.now()).days)} 日' for channel, deadline in zip(target_channels, channel_deadlines)]
-                embed = discord.Embed(
-                    title='**取得結果：**\n' + '\n\n'.join([f'{post}' for post in self.channels]),
-                    color=discord.Color.green(),
-                ) if self.channels else discord.Embed(
-                    title='取得結果：',
-                    description='タグ付けされた投稿はありません',
-                    color=discord.Color.green(),
-                )
+                if not self.posts:
+                    embed = discord.Embed(title='取得結果：', description='タグ付けされた投稿はありません', color=discord.Color.green())
+                    return embed
+                else:
+                    target_channels_id = [int(post) for post in self.posts.keys()]
+                    target_channels = [self.interaction.guild.get_thread(channel_id) for channel_id in target_channels_id]
+                    channel_deadlines = [deadline for deadline in self.posts.values()]
+                    self.channels = [f'・{channel.mention} \n    提出期限 : {deadline}\n    残り : {str((datetime.datetime.strptime(deadline, "%Y-%m-%d") - datetime.datetime.now()).days)} 日' for channel, deadline in zip(target_channels, channel_deadlines)]
+                    embed = discord.Embed(
+                        title='**取得結果：**\n' + '\n\n'.join([f'{post}' for post in self.channels]),
+                        color=discord.Color.green(),
+                    )
             else:
                 
                 if not self.step:
@@ -134,19 +134,19 @@ class EmbedHandler:
                     color=discord.Color.blue()
                 )
             elif self.step == 2:
-                target_member_ids = [member for member in self.members['ids']]
-                deadline = self.members['deadline']
-                self.members = [f'・ {self.interaction.guild.get_member(int(member_id)).mention}' for member_id in target_member_ids]
-                num_of_days = str((datetime.datetime.strptime(deadline, "%Y-%m-%d") - datetime.datetime.now()).days)
-                embed = discord.Embed(
-                    title='**取得結果：**',
-                    description='\n'.join([f'{member}' for member in self.members]) + f'\n\n提出期限 : {deadline}\n残り : {num_of_days} 日',
-                    color=discord.Color.green(),
-                ) if self.members else discord.Embed(
-                    title='取得結果：',
-                    description='タグ付けされたメンバーはいません',
-                    color=discord.Color.green(),
-                )
+                if not self.members:
+                    embed = discord.Embed(title='取得結果：', description='タグ付けされたメンバーはいません', color=discord.Color.green())
+                    return embed
+                else:
+                    target_member_ids = [member for member in self.members['ids']]
+                    deadline = self.members['deadline']
+                    self.members = [f'・ {self.interaction.guild.get_member(int(member_id)).mention}' for member_id in target_member_ids]
+                    num_of_days = str((datetime.datetime.strptime(deadline, "%Y-%m-%d") - datetime.datetime.now()).days)
+                    embed = discord.Embed(
+                        title='**取得結果：**',
+                        description='\n'.join([f'{member}' for member in self.members]) + f'\n\n提出期限 : {deadline}\n残り : {num_of_days} 日',
+                        color=discord.Color.green(),
+                    )
             else:
                 if not self.step:
                     embed = self.get_embed_error(title='エラーが発生しました (step is None or invalid)')
