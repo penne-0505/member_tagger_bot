@@ -149,7 +149,6 @@ async def called_logger(command_name: str, interaction: discord.Interaction):
 
 @tree.command(name='ping', description='pong')
 async def ping(interaction: discord.Interaction):
-    await NotifyHandler(interaction).get_threads([interaction.user], interaction)
     await called_logger('ping', interaction)
     to_be_shown_data = {
         'Websocket Latency': round(client.latency * 1000),
