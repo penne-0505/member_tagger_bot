@@ -18,6 +18,7 @@ from components.views import TagMemberView1, UntagMemberView1, GetTaggedthreadsV
 # TODO: pingのembedをEmbedHandlerで作成するようにする
 # TODO: 可能ならば、untagのmember_selectで、tagされているメンバーのみを表示するようにする
 # TODO: embedにおけるエラーハンドリング、エラーメッセージの表示をより詳細にする
+# TODO: コメント、docstringの充実化
 
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
