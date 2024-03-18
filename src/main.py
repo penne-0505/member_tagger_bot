@@ -127,7 +127,7 @@ class Client(discord.Client):
     async def set_presence(self):
         await self.change_presence(
             activity=discord.CustomActivity(
-                name=f'/help  Synced on {datetime.datetime.now().strftime("%Y/%m/%d, %H:%M:%S")}', type=discord.ActivityType.playing
+                name=f'Synced on **{datetime.datetime.now().strftime("%H : %M : %S")}**', type=discord.ActivityType.playing
                 )
             )
     
