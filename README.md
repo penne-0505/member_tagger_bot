@@ -1,2 +1,2 @@
 ## Introduction
-This is a Discord Bot that ties members in a guild (server) to posts and threads in the forum. It was created for a very personal community, so it is not generic. It was created for me to hold projects.
+This is a Discord Bot that ties members in a guild (server) to threads and threads in the forum. It was created for a very personal community, so it is not generic. It was created for me to hold projects.
