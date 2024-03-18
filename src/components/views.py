@@ -27,9 +27,9 @@ class ChannelSelect(discord.ui.ChannelSelect):
     async def callback(self, interaction: discord.Interaction):
         channels = interaction.data['values']
         if self.current_mode == 'tag':
-            await interaction.response.edit_message(view=TagMemberView2(channels=channels), embed=EmbedHandler(step=2, mode='tag').get_embed())
+            await interaction.response.edit_message(view=TagMemberView2(channels=channels), embed=EmbedHandler(interaction).get_embed_tag(2))
         elif self.current_mode == 'untag':
-            await interaction.response.edit_message(view=UntagMemberView2(channels=channels), embed=EmbedHandler(step=2, mode='untag').get_embed())
+            await interaction.response.edit_message(view=UntagMemberView2(channels=channels), embed=EmbedHandler(interaction).get_embed_untag(2))
         else:
             raise ValueError('current_mode must be either "tag" or "untag"')
 
@@ -55,9 +55,9 @@ class MemberSelect(discord.ui.UserSelect):
                 for member in members:
                     for channel in self.channels:
                         handler.untag_member(member, channel)
-                await interaction.response.edit_message(view=None, embed=EmbedHandler(step=3, mode='untag').get_embed())
+                await interaction.response.edit_message(view=None, embed=EmbedHandler(interaction).get_embed_untag(3))
             except Exception as e:
-                await interaction.response.edit_message(view=None, embed=EmbedHandler(step=0, mode='untag').get_embed())
+                await interaction.response.edit_message(view=None, embed=EmbedHandler(interaction).get_embed_untag(0))
         else:
             raise ValueError('current_mode must be either "tag" or "untag"')
 
@@ -83,12 +83,12 @@ class DeadlineSelect(discord.ui.Select):
             for member in self.members:
                 for channel in self.channels:
                     handler.tag_member(member, channel, deadline)
-            await interaction.response.edit_message(view=None, embed=EmbedHandler(step=4, mode='tag').get_embed())
+            await interaction.response.edit_message(view=None, embed=EmbedHandler(interaction).get_embed_tag(3))
         except Exception as e:
-            await interaction.response.edit_message(view=None, embed=EmbedHandler(step=0, mode='tag').get_embed())
+            await interaction.response.edit_message(view=None, embed=EmbedHandler(interaction).get_embed_tag(0))
 
 # TODO: 複数のメンバーを選択出来るようにする
-class GetTaggedPostsSelect(discord.ui.UserSelect):
+class GetTaggedthreadsSelect(discord.ui.UserSelect):
     def __init__(self):
         super().__init__(
             placeholder='メンバーを選択してください',
@@ -100,8 +100,8 @@ class GetTaggedPostsSelect(discord.ui.UserSelect):
     
     async def callback(self, interaction: discord.Interaction):
         selected_member = str(interaction.data['values'][0])
-        posts = handler.get_tagged_posts(selected_member)
-        await interaction.response.edit_message(embed=EmbedHandler(mode='get_tagged_posts', step=2, posts=posts, interaction=interaction).get_embed())
+        threads = handler.get_tagged_threads(selected_member)
+        await interaction.response.edit_message(embed=EmbedHandler(interaction).get_embed_get_tagged_threads(2, threads))
 
 
 class GetTaggedMembersSelect(discord.ui.ChannelSelect):
@@ -119,9 +119,9 @@ class GetTaggedMembersSelect(discord.ui.ChannelSelect):
         self.on_error = on_error
     
     async def callback(self, interaction: discord.Interaction):
-        channels = str(interaction.data['values'][0])
-        result = handler.get_tagged_members(channels)
-        await interaction.response.edit_message(embed=EmbedHandler(mode='get_tagged_members', step=2, members=result, interaction=interaction).get_embed())
+        target_channels = str(interaction.data['values'][0])
+        tagged_members = handler.get_tagged_members(target_channels)
+        await interaction.response.edit_message(embed=EmbedHandler(interaction).get_embed_get_tagged_members(2, tagged_members))
 
 
 class CancelButton(discord.ui.Button):
@@ -177,10 +177,10 @@ class UntagMemberView2(discord.ui.View):
         self.add_item(CancelButton())
 
 
-class GetTaggedPostsView(discord.ui.View):
+class GetTaggedthreadsView(discord.ui.View):
     def __init__(self):
         super().__init__()
-        self.add_item(GetTaggedPostsSelect())
+        self.add_item(GetTaggedthreadsSelect())
         self.add_item(CancelButton())
 
 
