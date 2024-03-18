@@ -125,11 +125,10 @@ class Client(discord.Client):
         self.synced = True
     
     async def set_presence(self):
+        now = datetime.datetime.now().strftime('%H時 %M分 %S秒')
         await self.change_presence(
-            activity=discord.CustomActivity(
-                name=f'Synced on **{datetime.datetime.now().strftime("%H : %M : %S")}**', type=discord.ActivityType.playing
-                )
-            )
+            activity=discord.Game(name=f'/help | Synced {now}', type=discord.ActivityType.listening)
+        )
     
     async def keep_alive(self):
         # 10分ごとにpingを送信(presenceの更新)
