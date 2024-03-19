@@ -79,6 +79,27 @@ class NotifyHandler:
             return True
         else:
             return False
+    
+    '''
+    FIXME: 以下のエラーが発生する
+    future: <Task finished name='Task-13' coro=<NotifyHandler.wait_until_notify() done, defined at /bot/src/main.py:55> exception=TypeError("'coroutine' object is not iterable")>
+
+    Traceback (most recent call last):
+
+    File "/bot/src/main.py", line 61, in wait_until_notify
+
+    prior_notify_5days = {member_id: {thread: deadline for thread, deadline in threads[member_id].items() if (deadline - now).days == 5} for member_id in threads}
+
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    TypeError: 'coroutine' object is not iterable
+
+    /usr/local/lib/python3.11/asyncio/base_events.py:1937: RuntimeWarning: coroutine 'NotifyHandler.get_threads' was never awaited
+
+    handle = None  # Needed to break cycles when an exception occurs.
+
+    RuntimeWarning: Enable tracemalloc to get the object allocation traceback
+    '''
 
     async def get_threads(
         self,
@@ -125,9 +146,10 @@ class Client(discord.Client):
         self.synced = True
     
     async def set_presence(self):
-        now = datetime.datetime.now().strftime('%H時 %M分 %S秒')
+        timezone = datetime.timezone(datetime.timedelta(hours=9))
+        now = datetime.datetime.now(timezone).strftime('%H:%M')
         await self.change_presence(
-            activity=discord.Game(name=f'/help | Synced {now}', type=discord.ActivityType.listening)
+            activity=discord.Game(name=f'/help | Synced {now}')
         )
     
     async def keep_alive(self):
@@ -135,7 +157,8 @@ class Client(discord.Client):
         await self.wait_until_ready()
         while not self.is_closed():
             await self.set_presence()
-            now = datetime.datetime.now().strftime('%Y/%m/%d, %H:%M:%S')
+            timezone = datetime.timezone(datetime.timedelta(hours=9))
+            now = datetime.datetime.now(timezone).strftime('%Y/%m/%d, %H:%M:%S')
             logging.info(Fore.GREEN + f'Pinged at {now}' + Style.RESET_ALL)
             await asyncio.sleep(600)
 
