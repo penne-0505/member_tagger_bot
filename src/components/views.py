@@ -1,5 +1,4 @@
 import datetime
-import asyncio
 
 import discord
 
@@ -9,16 +8,23 @@ from db_handler import MemberTaggerDBHandler as DBHandler
 
 handler = DBHandler()
 
+select_types = [
+    discord.ChannelType.public_thread,
+    discord.ChannelType.private_thread,
+]
+# FIXME: decide better variable name :(
+select_types_for_tagged_mem = [
+    discord.ChannelType.public_thread,
+    discord.ChannelType.private_thread,
+]
+
 class ChannelSelect(discord.ui.ChannelSelect):
     def __init__(self, current_mode: str):
         super().__init__(
             placeholder='投稿またはチャンネルを選択してください',
             min_values=1,
             max_values=25,
-            channel_types=[
-                discord.ChannelType.public_thread,
-                discord.ChannelType.private_thread,
-            ],
+            channel_types=select_types,
         )
         self.current_mode = current_mode
         self.interaction_check = interaction_check
@@ -61,6 +67,7 @@ class MemberSelect(discord.ui.UserSelect):
         else:
             raise ValueError('current_mode must be either "tag" or "untag"')
 
+# TODO: 任意の日数を選択出来るようにする(selectで任意の日数みたいなのを選ばせて、modalで入力させる?)
 class DeadlineSelect(discord.ui.Select):
     def __init__(self, channels: list[str], members: list[str]):
         super().__init__(
@@ -110,10 +117,7 @@ class GetTaggedMembersSelect(discord.ui.ChannelSelect):
             placeholder='投稿またはチャンネルを選択してください',
             min_values=1,
             max_values=25,
-            channel_types=[
-                discord.ChannelType.public_thread,
-                discord.ChannelType.private_thread,
-            ],
+            channel_types=select_types_for_tagged_mem,
         )
         self.interaction_check = interaction_check
         self.on_error = on_error
@@ -124,6 +128,64 @@ class GetTaggedMembersSelect(discord.ui.ChannelSelect):
         await interaction.response.edit_message(embed=EmbedHandler(interaction).get_embed_get_tagged_members(2, tagged_members))
 
 
+class SettingsSelect(discord.ui.Select):
+    def __init__(self):
+        super().__init__(
+            placeholder='変更する設定を選択してください',
+            min_values=1,
+            max_values=1,
+            options=[
+                discord.SelectOption(label='【DEV】ChannelSelectで選択可能なチャンネルを変更', value='channel_select_restrict'),
+                discord.SelectOption(label='【DEV】GetTaggedMembersSelectで選択可能なチャンネルを変更', value='tagged_mem_select_restrict'),
+            ]
+        )
+        self.interaction_check = interaction_check
+        self.on_error = on_error
+    
+    async def callback(self, interaction: discord.Interaction):
+        selected_setting = str(interaction.data['values'][0])
+        if selected_setting == 'channel_select_restrict':
+            await interaction.response.edit_message(view=ChannelTypeSelect(current_mode='channel_select_restrict'), embed=EmbedHandler(interaction).get_embed_settings(2, 'channel_select_restrict'))
+        elif selected_setting == 'tagged_mem_select_restrict':
+            await interaction.response.edit_message(view=ChannelTypeSelect(current_mode='tagged_mem_select_restrict'), embed=EmbedHandler(interaction).get_embed_settings(2, 'tagged_mem_select_restrict'))
+        else:
+            raise ValueError('selected_setting must be either "channel_select_restrict" or "tagged_mem_select_restrict"')
+
+class ChannelTypeSelect(discord.ui.Select):
+    def __init__(self, current_mode: str):
+        super().__init__(
+            placeholder='変更する設定を選択してください',
+            min_values=1,
+            max_values=25,
+            options=[
+                discord.SelectOption(label='text', value='text'),
+                discord.SelectOption(label='private', value='private'),
+                discord.SelectOption(label='voice', value='voice'),
+                discord.SelectOption(label='category', value='category'),
+                discord.SelectOption(label='news', value='news'),
+                discord.SelectOption(label='news_thread', value='news_thread'),
+                discord.SelectOption(label='public_thread', value='public_thread'),
+                discord.SelectOption(label='private_thread', value='private_thread'),
+                discord.SelectOption(label='stage_voice', value='stage_voice'),
+                discord.SelectOption(label='forum', value='forum'),
+            ]
+        )
+        self.current_mode = current_mode
+        self.interaction_check = interaction_check
+        self.on_error = on_error
+    
+    async def callback(self, interaction: discord.Interaction):
+        channel_types = interaction.data['values'] if isinstance(interaction.data['values'], list) else [interaction.data['values']]
+        if self.current_mode == 'channel_select_restrict':
+            global select_types
+            select_types = channel_types
+        elif self.current_mode == 'tagged_mem_select_restrict':
+            global select_types_for_tagged_mem
+            select_types_for_tagged_mem = channel_types
+        else:
+            raise ValueError('current_mode must be either "channel_select_restrict" or "tagged_mem_select_restrict"')
+
+
 class CancelButton(discord.ui.Button):
     def __init__(self):
         super().__init__(label='キャンセル', style=discord.ButtonStyle.secondary)
@@ -131,18 +193,18 @@ class CancelButton(discord.ui.Button):
         self.on_error = on_error
     
     async def callback(self, interaction: discord.Interaction):
-        await interaction.response.edit_message(view=discord.abc.MISSING, embed=EmbedHandler().get_embed_cancel())
+        await interaction.response.edit_message(view=discord.abc.MISSING, embed=EmbedHandler(interaction).get_embed_cancel())
 
 
 async def interaction_check(self, interaction: discord.Interaction):
     if interaction.user == interaction.message.author:
         return True
     else:
-        await interaction.response.send_message(silent=True, view=None, embed=EmbedHandler().get_embed_interaction_error())
+        await interaction.response.send_message(silent=True, view=None, embed=EmbedHandler(interaction).get_embed_interaction_error())
         return False
 
 async def on_error(self, interaction: discord.Interaction, error: Exception=None, item=None):
-    return interaction.response.send_message(ephemeral=True, view=None, embed=EmbedHandler().get_embed_error())
+    return interaction.response.send_message(ephemeral=True, view=None, embed=EmbedHandler(interaction).get_embed_error())
 
 
 class TagMemberView1(discord.ui.View):
@@ -188,4 +250,11 @@ class GetTaggedMembersView(discord.ui.View):
     def __init__(self):
         super().__init__()
         self.add_item(GetTaggedMembersSelect())
+        self.add_item(CancelButton())
+
+
+class SettingsView(discord.ui.View):
+    def __init__(self):
+        super().__init__()
+        self.add_item
         self.add_item(CancelButton())
