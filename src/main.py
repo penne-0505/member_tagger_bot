@@ -149,7 +149,7 @@ async def notify_toggle_command(interaction: discord.Interaction):
 async def notify_now_command(interaction: discord.Interaction, send_here: bool = False):
     notify_handler = NotifyHandler(interaction)
     await notify_handler.notify_member_db_sync()
-    embed = notify_handler._notify_for_one_channel()
+    embed = await notify_handler._notify_for_one_channel()
     await interaction.response.send_message(ephemeral=True, embed=embed)
 
 @tree.command(name='invite', description='このBotの招待リンクを表示します')
