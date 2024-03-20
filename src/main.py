@@ -5,12 +5,12 @@ import logging
 
 import discord
 from discord import app_commands
-from discord.ext import commands, tasks
+from discord.ext import tasks
 from colorama import Fore, Style
 
 from db_handler import MemberTaggerDBHandler, MemberTaggerNotifyDBHandler
 from components.embeds import EmbedHandler
-from components.views import TagMemberView1, UntagMemberView1, GetTaggedthreadsView, GetTaggedMembersView, SettingsView
+from components.views import TagMemberView1, UntagMemberView1, GetTaggedthreadsView, GetTaggedMembersView
 from notify_handler import NotifyHandler
 
 
@@ -146,24 +146,16 @@ async def notify_toggle_command(interaction: discord.Interaction):
     del notify_db_handler
 
 @tree.command(name='notify_now', description='タグ付けされたメンバーに、今すぐ通知を送ります（通常は毎日12時, 24時に自動で送信されます）')
-async def notify_now_command(interaction: discord.Interaction):
+async def notify_now_command(interaction: discord.Interaction, send_here: bool = False):
     notify_handler = NotifyHandler(interaction)
-    await notify_handler.notify_member_db_sync(interaction)
-    notifies = notify_handler.fetch_notifies(interaction)
-    await notify_handler._notify(notifies[0], 5)
-    await notify_handler._notify(notifies[1], 3)
-    await notify_handler._notify(notifies[2], 1)
-    await notify_handler._notify(notifies[3], 0)
-    del notifies
-    del notify_handler
+    await notify_handler.notify_member_db_sync()
+    embed = notify_handler._notify_for_one_channel()
+    await interaction.response.send_message(ephemeral=True, embed=embed)
 
 @tree.command(name='invite', description='このBotの招待リンクを表示します')
 async def invite_command(interaction: discord.Interaction):
     await interaction.response.send_message(ephemeral=True, embed=EmbedHandler(interaction).get_embed_invite(1))
 
-@tree.command(name='settings', description='テスト・開発用の設定を表示します')
-async def settings_command(interaction: discord.Interaction):
-    await interaction.response.send_message(ephemeral=True, view=SettingsView(), embed=EmbedHandler(interaction).get_embed_settings(1))
 
 secret_token = str(os.getenv('DISCORD_BOT_TOKEN_MT'))
 client.run(secret_token)

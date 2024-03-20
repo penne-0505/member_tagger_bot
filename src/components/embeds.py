@@ -160,38 +160,6 @@ class EmbedHandler:
             else:
                 embed = self.get_embed_error(title='エラーが発生しました (unknown error)')
         return embed
-    
-    def get_embed_settings(self, step: int | None, mode: str):
-        '''mode expected: `channel_select_restrict` or `tagged_mem_select_restrict` '''
-        if step == 1:
-            embed = discord.Embed(
-                    title='1. 設定の選択',
-                    description='変更を行う項目を選択してください',
-                    color=discord.Color.blue()
-                )
-        elif step == 2:
-            if mode == 'channel_select_restrict':
-                embed = discord.Embed(
-                    title='2. 表示するチャンネルを選択',
-                    description='ChannelSelectで表示するチャンネルの種類を選択してください',
-                    color=discord.Color.blue()
-                )
-            elif mode == 'tagged_mem_select_restrict':
-                embed = discord.Embed(
-                    title='2. 表示するチャンネルを選択',
-                    description='TaggedMembersSelectで表示するチャンネルの種類を選択してください',
-                    color=discord.Color.blue()
-                )
-            else:
-                embed = self.get_embed_error(title='エラーが発生しました (mode is None or invalid)')
-        else:
-            if not step:
-                embed = self.get_embed_error(title='エラーが発生しました (step is None or invalid)')
-            elif not mode:
-                embed = self.get_embed_error(title='エラーが発生しました (mode is None or invalid)')
-            else:
-                embed = self.get_embed_error(title='エラーが発生しました (unknown error)')
-        return embed
 
     def get_embed_error(self, title: str = None, description: str = None):
         return discord.Embed(
