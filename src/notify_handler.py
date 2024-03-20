@@ -73,9 +73,10 @@ class NotifyHandler:
             logging.error(f'Error syncing _notify member db: {e}')
             return False
     
-    async def fetch_notifies(self) -> tuple[dict[str, dict[discord.Thread, datetime.datetime]]]:
+    async def fetch_notifies(self) -> list[dict[str, dict[discord.Thread, datetime.datetime]]]:
+        guild = self.interaction.guild if self.interaction else self.guild
         self.notify_member_db_sync(self.interaction if self.interaction else None, self.guild if self.guild else None)
-        threads = await self.get_threads([self.guild.get_member(member_id) for member_id in self.notify_db_handler.get_notify_validity_members()], self.interaction)
+        threads = await self.get_threads([guild.get_member(member_id) for member_id in self.notify_db_handler.get_notify_validity_members()], self.interaction)
         now = datetime.datetime.now()
 
         # thread内のdeadlineが5, 3, 1, 0日前のものを取得
@@ -83,7 +84,26 @@ class NotifyHandler:
         prior_notify_3days = {member_id: {thread: deadline for thread, deadline in threads[member_id].items() if (deadline - now).days == 3} for member_id in threads}
         prior_notify_1day = {member_id: {thread: deadline for thread, deadline in threads[member_id].items() if (deadline - now).days == 1} for member_id in threads}
         very_day_notify = {member_id: {thread: deadline for thread, deadline in threads[member_id].items() if (deadline - now).days == 0} for member_id in threads}
-        return tuple(prior_notify_5days, prior_notify_3days, prior_notify_1day, very_day_notify)
+        return [prior_notify_5days, prior_notify_3days, prior_notify_1day, very_day_notify]
+
+    async def _notify_for_one_channel(self) -> discord.Embed:
+        notifies = self.fetch_notifies(self.interaction if self.interaction else self.guild)
+        embed = discord.Embed(
+            title='通知',
+            color=discord.Color.green()
+        )
+        
+        for i, notify in enumerate(notifies):
+            members = []
+            for member_id, threads in notify.items():
+                member = self.interaction.guild.get_member(int(member_id)) if self.interaction else self.guild.get_member(int(member_id))
+                if member:
+                    members.append(f'{member.mention} : {len(threads)}スレッド')
+                else:
+                    logging.warning(f'Member {member_id} not found')
+            embed.add_field(name=f'{i}日前', value='\n'.join(members), inline=False)
+        
+        return embed
     
     # 毎日24時に実行
     @tasks.loop(time=datetime.time(hour=0, minute=0, tzinfo=datetime.timezone(datetime.timedelta(hours=9))))
