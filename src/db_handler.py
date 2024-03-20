@@ -3,13 +3,15 @@ import logging
 
 import boto3
 
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class DBHandler:
-    def __init__(self, table_name: str | None = None):
+    def __init__(self, table_name: str | None = None, region_name: str = 'ap-northeast-1'):
+        region_name = os.getenv('AWS_DEFAULT_REGION', region_name)
         self.dynamodb = boto3.resource(
             'dynamodb',
-            region_name='ap-northeast-1',
+            region_name=region_name,
             aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
             aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
             )
@@ -68,6 +70,14 @@ class DBHandler:
             return response.get('Items', [])
         except Exception as e:
             logging.error(f"Error querying items: {e}")
+            return []
+    
+    def scan_tables(self) -> list[str]:
+        try:
+            response = self.dynamodb.list_tables()
+            return response.get('TableNames', [])
+        except Exception as e:
+            logging.error(f"Error scanning tables: {e}")
             return []
 
 class MemberTaggerDBHandler(DBHandler):
@@ -140,7 +150,7 @@ class MemberTaggerNotifyDBHandler(DBHandler):
     def __init__(self):
         super().__init__('member_tagger_notify')
     
-    def set_notify(self, member_id: str, notify: bool):
+    def set_notify_state(self, member_id: str, notify: bool):
         self.put({'member_id': member_id, 'notify': notify})
     
     def get_notify_state(self, member_id: str) -> bool | None:
@@ -150,6 +160,10 @@ class MemberTaggerNotifyDBHandler(DBHandler):
     def get_notify_validity_members(self) -> list[str]:
         items = self.table.scan().get('Items', [])
         return [item['member_id'] for item in items if item['notify']]
+    
+    def get_all_notify_states(self) -> dict[str, bool]:
+        items = self.table.scan().get('Items', [])
+        return {item['member_id']: item['notify'] for item in items}
     
     def toggle_notify(self, member_id: str):
         try:
