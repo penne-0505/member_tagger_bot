@@ -8,7 +8,7 @@ import discord
 class EmbedHandler:
     def __init__(self, interaction: discord.Interaction):
         self.interaction = interaction
-
+    
     def get_embed_tag(self, step: int):
         if step == 1:
                 embed = discord.Embed(
@@ -76,10 +76,16 @@ class EmbedHandler:
                 embed = discord.Embed(title='取得結果：', description='タグ付けされた投稿はありません', color=discord.Color.green())
                 return embed
             else:
-                target_channels_id = [int(thread) for thread in threads.keys()]
-                target_channels = [self.interaction.guild.get_thread(channel_id) for channel_id in target_channels_id]
-                channel_deadlines = [deadline for deadline in threads.values()]
-                self.channels = [f'・{channel.mention} \n    提出期限 : {deadline}\n    残り : {str((datetime.datetime.strptime(deadline, "%Y-%m-%d") - datetime.datetime.now()).days)} 日' for channel, deadline in zip(target_channels, channel_deadlines)]
+                target_channels = []
+                channel_deadlines = []
+                for thread, deadline in threads.items():
+                    if self.interaction.guild.get_channel_or_thread(int(thread)):
+                        target_channels.append(self.interaction.guild.get_channel_or_thread(int(thread)))
+                        channel_deadlines.append(deadline)
+                
+                print(target_channels, channel_deadlines)
+                timezone = datetime.timezone(datetime.timedelta(hours=9))
+                self.channels = [f'・{channel.mention} \n    提出期限 : {deadline}\n    残り : {str((datetime.datetime.strptime(deadline, "%Y-%m-%d").replace(tzinfo=timezone) - datetime.datetime.now(timezone)).days)} 日' for channel, deadline in zip(target_channels, channel_deadlines)]
                 embed = discord.Embed(
                     title='**取得結果：**\n' + '\n\n'.join([f'{thread}' for thread in self.channels]),
                     color=discord.Color.green(),
@@ -103,23 +109,39 @@ class EmbedHandler:
                 color=discord.Color.blue()
             )
         elif step == 2:
-            if not self.members:
-                embed = discord.Embed(title='取得結果：', description='タグ付けされたメンバーはいません', color=discord.Color.green())
+            if not members:
+                embed = discord.Embed(title='取得結果：', description='タグ付けされたメンバーはいませんでした', color=discord.Color.green())
                 return embed
             else:
-                target_member_ids = [member for member in self.members['ids']]
-                deadline = self.members['deadline']
-                self.members = [f'・ {self.interaction.guild.get_member(int(member_id)).mention}' for member_id in target_member_ids]
-                num_of_days = str((datetime.datetime.strptime(deadline, "%Y-%m-%d") - datetime.datetime.now()).days)
-                embed = discord.Embed(
-                    title='**取得結果：**',
-                    description='\n'.join([f'{member}' for member in self.members]) + f'\n\n提出期限 : {deadline}\n残り : {num_of_days} 日',
-                    color=discord.Color.green(),
-                )
+                target_member_ids = [member for member in members['ids']]
+                raw_deadline = members['deadline']
+                members = [f'・ {self.interaction.guild.get_member(int(member_id)).mention}' for member_id in target_member_ids]
+                num_of_days = str((datetime.datetime.strptime(raw_deadline, "%Y-%m-%d") - datetime.datetime.now()).days + 1) if raw_deadline else None
+                if not members and num_of_days:
+                    embed = discord.Embed(
+                        title='タグ付けされたメンバーはいませんでした',
+                        description='ですが、今回のケースは想定外です。よろしければ管理者か開発者に連絡してください。',
+                        color=discord.Color.yellow()
+                    )
+                elif members and not num_of_days:
+                    embed = discord.Embed(
+                        title=f'**取得結果：**\n' + '\n'.join([f'{member}' for member in members]),
+                        description='提出期限が見つかりませんでした。今回のケースは想定外です。よろしければ管理者か開発者に連絡してください。',
+                        color=discord.Color.green()
+                    )
+                elif not members and not num_of_days:
+                    embed = discord.Embed(title='取得結果：', description='タグ付けされたメンバーはいませんでした', color=discord.Color.green())
+                else:
+                    embed = discord.Embed(
+                        title='**取得結果：**',
+                        description='\n'.join([f'{member}' for member in members]) + f'\n\n提出期限 : {raw_deadline}\n残り : {num_of_days} 日',
+                        color=discord.Color.green()
+                    )
+                return embed
         else:
             if not step:
                 embed = self.get_embed_error(title='エラーが発生しました (step is None or invalid)')
-            elif not self.members:
+            elif not members:
                 embed = self.get_embed_error(title='エラーが発生しました (members is None or invalid)')
             elif not self.interaction:
                 embed = self.get_embed_error(title='エラーが発生しました (interaction is None or invalid)')
