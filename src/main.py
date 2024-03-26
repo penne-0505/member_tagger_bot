@@ -34,6 +34,7 @@ class Client(discord.Client):
     def __init__(self):
         super().__init__(intents=intents)
         self.synced = False
+        self.notify_handler = NotifyHandler()
     
     ############## discord.py events ##############
     
@@ -51,7 +52,8 @@ class Client(discord.Client):
         for guild in self.guilds:
             try:
                 logging.info(Fore.GREEN + f'Joined guild {guild.name} ({guild.id})' + Style.RESET_ALL)
-                await NotifyHandler(guild=guild).notify_member_db_sync()
+                self.notify_handler.guild = guild
+                await self.notify_handler.notify_member_db_sync()
             except discord.errors.Forbidden:
                 logging.warning(Fore.RED + f'Failed to join guild {guild.name} ({guild.id})' + Style.RESET_ALL)
         logging.info(Fore.GREEN + 'Notify task started' + Style.RESET_ALL)
@@ -59,9 +61,9 @@ class Client(discord.Client):
         logging.info(Fore.GREEN + Style.BRIGHT + 'Bot is ready' + Style.RESET_ALL)
     
     async def on_guild_join(self, guild: discord.Guild):
-        loop = self.loop
         logging.info(Fore.GREEN + f'Joined guild {guild.name} ({guild.id})' + Style.RESET_ALL)
-        loop.create_task(NotifyHandler(guild=guild).notify_member_db_sync())
+        self.notify_handler.guild = guild
+        await self.notify_handler.notify_member_db_sync()
         logging.info(Fore.GREEN + 'Notify task started' + Style.RESET_ALL)
         client.sync_commands()
     
@@ -70,8 +72,9 @@ class Client(discord.Client):
         user_name = Fore.BLUE + str(interaction.user.name) + Style.RESET_ALL
         user_id = Fore.BLUE + str(interaction.user.id) + Style.RESET_ALL
         guild = Fore.GREEN + str(interaction.guild.name) + Style.RESET_ALL
-        time = Fore.MAGENTA + datetime.datetime.now().strftime("%Y/%m/%d, %H:%M:%S") + Style.RESET_ALL
-        logging.info(f'Command {command_name} called by {user_name} ({user_id}) on {guild} at {time}')
+        timezone = datetime.timezone(datetime.timedelta(hours=9))
+        time = Fore.MAGENTA + datetime.datetime.now(timezone).strftime("%Y/%m/%d, %H:%M:%S") + Style.RESET_ALL
+        logging.info(f'{command_name} called by {user_name} ({user_id}) on {guild} at {time}')
     
     ############## my utils ##############
     
@@ -88,6 +91,29 @@ class Client(discord.Client):
         await self.change_presence(
             activity=discord.Game(name=f'/help | Synced {now} (JST)')
         )
+    
+    @tasks.loop(time=datetime.time(hour=0, minute=0, second=0))
+    async def notify_very_day(self):
+        guilds = self.notify_handler.db.get_guilds()
+        for guild_id in guilds:
+            self.notify_handler.guild = self.get_guild(guild_id)
+            threads = await self.notify_handler.fetch_tagged_threads()
+            converted = await self.notify_handler.convert_tagged_threads(threads)
+            refined = await self.notify_handler.refine_threads(converted)
+            for days, data in refined.items():
+                await self.notify_handler._notify_for_one_channel(days, data) if days == 0 else None
+    
+    @tasks.loop(time=datetime.time(hour=12, minute=0, second=0))
+    async def notify_prior_day(self):
+        guilds = self.notify_handler.db.get_guilds()
+        for guild_id in guilds:
+            self.notify_handler.guild = self.get_guild(guild_id)
+            threads = await self.notify_handler.fetch_tagged_threads()
+            converted = await self.notify_handler.convert_tagged_threads(threads)
+            refined = await self.notify_handler.refine_threads(converted)
+            for days, data in refined.items():
+                await self.notify_handler._notify_for_one_channel(days, data) if days in [1, 3, 5] else None
+
 
 client = Client()
 tree = discord.app_commands.CommandTree(client)
@@ -114,7 +140,7 @@ async def ping_command(interaction: discord.Interaction):
 @tree.command(name='help', description='コマンド一覧を表示します')
 async def help(interaction: discord.Interaction):
     commands = {command.name: command.description for command in tree.get_commands()}
-    commands['ping'] = '通信や処理にかかった時間を返します'
+    commands['ping'] = 'テスト用の情報を返します'
     embed = discord.Embed(
         title='コマンド一覧',
         description='\n'.join([f'**`/{command}`** : {description}' for command, description in commands.items()]),
@@ -147,10 +173,9 @@ async def notify_toggle_command(interaction: discord.Interaction):
 
 @tree.command(name='notify_now', description='タグ付けされたメンバーに、今すぐ通知を送ります（通常は毎日12時, 24時に自動で送信されます）')
 async def notify_now_command(interaction: discord.Interaction, send_here: bool = False):
-    notify_handler = NotifyHandler(interaction)
-    await notify_handler.notify_member_db_sync()
-    embed = await notify_handler._notify_for_one_channel()
-    await interaction.response.send_message(ephemeral=True, embed=embed)
+    notify_handler = client.notify_handler
+    notify_handler.guild = interaction.guild
+    await notify_handler.notify_now_to_channel(interaction.channel) if send_here else await notify_handler.notify_now()
 
 @tree.command(name='invite', description='このBotの招待リンクを表示します')
 async def invite_command(interaction: discord.Interaction):
