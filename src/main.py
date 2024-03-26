@@ -88,9 +88,11 @@ class Client(discord.Client):
     async def set_presence(self):
         timezone = datetime.timezone(datetime.timedelta(hours=9))
         now = datetime.datetime.now(timezone).strftime('%H:%M')
+        await self.sync_commands()
         await self.change_presence(
             activity=discord.Game(name=f'/help | Synced {now} (JST)')
         )
+        logging.info(Fore.GREEN + f'Presence set to {now}' + Style.RESET_ALL)
     
     @tasks.loop(time=datetime.time(hour=0, minute=0, second=0))
     async def notify_very_day(self):
