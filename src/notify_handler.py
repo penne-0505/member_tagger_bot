@@ -1,120 +1,147 @@
 import datetime
-import logging
-from discord.ext import tasks
 
 import discord
+from discord.ext import tasks
 
 from db_handler import MemberTaggerNotifyDBHandler, MemberTaggerDBHandler
 
+'''
+1. 規定時刻まで待つ(12時か0時)(これはtask.loopで時刻を指定して実行する)
+2. ギルドごとに
+    1. タグ付けされた投稿とメンバーの辞書を取得
+    2. {member: {thread_id: deadline}, ...}となっている辞書を{thread_id: {'members': [member_id, ...], 'deadline': deadline}に変換
+    3. notifyがTrueのメンバーに対して、deadlineが近づいている投稿を取得
+    4. 通知をthreadごとに送信
+3. 変数を初期化して、1に戻る
+'''
+
 class NotifyHandler:
-    def __init__(self, interaction: discord.Interaction | None = None, guild: discord.Guild | None = None):
-        self.interaction = interaction
-        self.threads_db_handler = MemberTaggerDBHandler()
-        self.notify_db_handler = MemberTaggerNotifyDBHandler()
-        self.guild = guild
-    
-    async def _notify(self, target_members: dict[str, dict[discord.Thread, datetime.datetime]], until: int = None):
-        
-        for member_id, threads in target_members.items():
-            member = self.interaction.guild.get_member(int(member_id)) if self.interaction else self.guild.get_member(int(member_id))
-            embed = discord.Embed(
-                title='',
-                description='',
-                color=discord.Color.yellow()
-            )
-            if member:
-                members = []
-                for thread, deadline in threads.items():
-                    embed.title = f'提出まで残り{str((deadline - datetime.datetime.now()).days)}日です！'
-                    members.append(f'・ {thread.mention}')
-                embed.description = '\n'.join(members)
-                embed.color = discord.Color.yellow() if 0 < until <= 5 else discord.Color.red()
-                await thread.send(embed=embed)
-            else:
-                logging.warning(f'Member {member_id} not found')
-
-    async def notify_member_toggle(self, members: dict[discord.Member]) -> bool:
-        toggle_result = [self.notify_db_handler.toggle_notify(member.id) for member in members]
-        if all(toggle_result):
-            return True
+    def __init__(self, guild: discord.Guild | None = None, interaction: discord.Interaction | None = None):
+        if guild or interaction:
+            self.guild = guild if guild else interaction.guild
         else:
-            return False
-
-    async def get_threads(
-        self,
-        target_members: list[discord.Member],
-        ) -> dict[str, dict[discord.Thread | None, datetime.datetime]]:
-
-        thread_ids = {str(member.id): self.threads_db_handler.get_tagged_threads(str(member.id)) for member in target_members}
-        # thread_idsが空の場合はNoneを返す
-        _guild = self.interaction.guild if self.interaction else self.guild
-        if not thread_ids.items() or not list(thread_ids.values())[0]:
-            return None
-        else:
-            # thread_idsをthreadに変換, deadlineをdatetimeに変換
-            threads = {
-                member_id: {
-                    _guild.get_thread(int(thread_id)): datetime.datetime.strptime(deadline, "%Y-%m-%d") for thread_id, deadline in threads.items()
-                    } for member_id, threads in thread_ids.items()
-                }
-            return threads
+            print('guild or interaction is not given (ignored)')
+        self._interaction = interaction # it wont be used
+        self.db = MemberTaggerNotifyDBHandler()
+        self.tag_db = MemberTaggerDBHandler()
     
     async def notify_member_db_sync(self) -> bool:
-        '''success: True, failure: False'''
-        try:
-            members = self.interaction.guild.members if self.interaction else self.guild.members
-            member_ids = [str(member.id) for member in members]
-            db_member_ids = list(self.notify_db_handler.get_all_notify_states().keys())
-            for member_id in member_ids:
-                if member_id not in db_member_ids:
-                    self.notify_db_handler.set_notify_state(member_id, True)
-            return True
-        except Exception as e:
-            logging.error(f'Error syncing _notify member db: {e}')
-            return False
+        if not self.guild:
+            raise ValueError('guild is not set')
+        
+        if not self.guild.id in self.db.get_guilds():
+            self.db.set_guild_id(self.guild.id)
+        
+        members = self.guild.members
+
+        for member in members:
+            if not self.db.get_notify_state(self.guild.id, member.id):
+                self.db.set_notify_state(self.guild.id, member.id, True)
+        return True if members == self.db.get_members(self.guild.id) else False
     
-    async def fetch_notifies(self) -> list[dict[str, dict[discord.Thread, datetime.datetime]]]:
-        guild = self.interaction.guild if self.interaction else self.guild
-        self.notify_member_db_sync(self.interaction if self.interaction else None, self.guild if self.guild else None)
-        threads = await self.get_threads([guild.get_member(member_id) for member_id in self.notify_db_handler.get_notify_validity_members()], self.interaction)
-        now = datetime.datetime.now()
+    async def fetch_tagged_threads(self) -> dict[str, dict[str, str]]:
+        if not self.guild:
+            raise ValueError('guild is not set')
+        
+        member_ids = self.db.get_members(self.guild.id)
+        threads = {}
+        for member_id in member_ids:
+            threads[member_id] = self.tag_db.get_tagged_threads(member_id)
+        return threads
+    
+    async def convert_tagged_threads(
+        self,
+        threads: dict[str, dict[str, str]]
+        ) -> dict[discord.Thread | discord.TextChannel, dict[str, list[discord.Member] | datetime.datetime]]:
+        '''
+        return {thread: {'members': [member, ...], 'deadline': deadline}}
+        '''
+        if not self.guild:
+            raise ValueError('guild is not set')
+        
+        timezone = datetime.timezone(datetime.timedelta(hours=9))
+        converted = {}
+        for member_id, thread_dict in threads.items():
+            for thread_id, deadline in thread_dict.items():
+                thread = self.guild.get_channel_or_thread(int(thread_id))
+                deadline = datetime.datetime.strptime(deadline, "%Y-%m-%d").replace(tzinfo=timezone) if deadline else None
+                if not thread:
+                    continue
+                if thread not in converted:
+                    converted[thread] = {'members': [], 'deadline': deadline}
+                converted[thread]['members'].append(self.guild.get_member(int(member_id)))
+        return converted
+    
+    # TODO: 型エイリアスを使って、型を簡潔に表現するようにする
+    async def refine_threads(
+        self,
+        threads: dict[discord.Thread | discord.TextChannel, dict[str, list[discord.Member] | datetime.datetime]]
+        ) -> dict[int, dict[discord.Thread | discord.TextChannel, dict[str, list[discord.Member] | datetime.datetime]]]:
+        '''return threads that deadline is within 5, 3, 1, 0 day(s)\nreturn {days: {thread: {'members': [member, ...], 'deadline': deadline}}}'''
+        if not self.guild:
+            raise ValueError('guild is not set')
+        
+        timezone = datetime.timezone(datetime.timedelta(hours=9))
+        now = datetime.datetime.now(timezone)
+        refined = {5: {}, 3: {}, 1: {}, 0: {}}
+        for thread, data in threads.items():
+            deadline = data['deadline']
+            if not deadline:
+                continue
+            days = (deadline - now).days
+            if days in refined:
+                refined[days][thread] = data
+        return refined
 
-        # thread内のdeadlineが5, 3, 1, 0日前のものを取得
-        prior_notify_5days = {member_id: {thread: deadline for thread, deadline in threads[member_id].items() if (deadline - now).days == 5} for member_id in threads}
-        prior_notify_3days = {member_id: {thread: deadline for thread, deadline in threads[member_id].items() if (deadline - now).days == 3} for member_id in threads}
-        prior_notify_1day = {member_id: {thread: deadline for thread, deadline in threads[member_id].items() if (deadline - now).days == 1} for member_id in threads}
-        very_day_notify = {member_id: {thread: deadline for thread, deadline in threads[member_id].items() if (deadline - now).days == 0} for member_id in threads}
-        return [prior_notify_5days, prior_notify_3days, prior_notify_1day, very_day_notify]
-
-    async def _notify_for_one_channel(self) -> discord.Embed:
-        notifies = self.fetch_notifies(self.interaction if self.interaction else self.guild)
+    async def notify_now(self):
+        if not self.guild:
+            raise ValueError('guild is not set')
+        
+        await self.notify_member_db_sync()
+        threads = await self.fetch_tagged_threads()
+        converted = await self.convert_tagged_threads(threads)
+        refined = await self.refine_threads(converted)
+        for days, data in refined.items():
+            await self._notify_for_one_channel(days, data)
+    
+    async def notify_now_to_channel(self, channel: discord.TextChannel | discord.Thread):
+        if not self.guild:
+            raise ValueError('guild is not set')
+        
+        await self.notify_member_db_sync()
+        threads = await self.fetch_tagged_threads()
+        converted = await self.convert_tagged_threads(threads)
+        refined = await self.refine_threads(converted)
+        content_0 = [await self._get_notify_content(0, data) for data in refined[0].values()]
+        content_1 = [await self._get_notify_content(1, data) for data in refined[1].values()]
+        content_3 = [await self._get_notify_content(3, data) for data in refined[3].values()]
+        content_5 = [await self._get_notify_content(5, data) for data in refined[5].values()]
+        contents = content_0 + content_1 + content_3 + content_5
+        if contents:
+            for content in contents:
+                await channel.send(content=content['message'], embed=content['embed'])
+        else:
+            await channel.send(embed=discord.Embed(title='通知するものがありませんでした', color=discord.Color.blue()), silent=True, delete_after=5.0)
+        
+    # 呼び出す側がループを回す
+    async def _notify_for_one_channel(self, days: int, data: dict[discord.Thread | discord.TextChannel, dict[str, list[discord.Member] | datetime.datetime]]) -> dict[str, discord.Embed | str]:
+        for thread, data in data.items():
+            content = await self._get_notify_content(days, data)
+            embed = content['embed']
+            message = content['message']
+            await thread.send(content=message, embed=embed)
+        return {'embed': embed, 'message': message}
+    
+    # 呼び出す側がループを回す
+    async def _get_notify_content(self, days: int, data: dict[str, list[discord.Member] | datetime.datetime]) -> dict[str, discord.Embed | str]:
+        members = data['members']
+        deadline = data['deadline']
+        deadline = deadline.strftime('%Y-%m-%d') if deadline else '未設定'
+        member_mentions = [member.mention for member in members]
         embed = discord.Embed(
-            title='通知',
+            title='今日が提出期限です！' if days == 0 else f'提出期限が{days}日後です',
+            description=f'提出期限 : {deadline}\n提出者 : {", ".join(member_mentions)}',
             color=discord.Color.green()
         )
-        
-        for i, notify in enumerate(notifies):
-            members = []
-            for member_id, threads in notify.items():
-                member = self.interaction.guild.get_member(int(member_id)) if self.interaction else self.guild.get_member(int(member_id))
-                if member:
-                    members.append(f'{member.mention} : {len(threads)}スレッド')
-                else:
-                    logging.warning(f'Member {member_id} not found')
-            embed.add_field(name=f'{i}日前', value='\n'.join(members), inline=False)
-        
-        return embed
-    
-    # 毎日24時に実行
-    @tasks.loop(time=datetime.time(hour=0, minute=0, tzinfo=datetime.timezone(datetime.timedelta(hours=9))))
-    async def notify_very_day(self):
-        notifies = self.fetch_notifies(self.interaction if self.interaction else self.guild)
-        await self._notify(notifies[3], 0)
-    
-    # 毎日12時に実行
-    @tasks.loop(time=datetime.time(hour=12, minute=0, tzinfo=datetime.timezone(datetime.timedelta(hours=9))))
-    async def notify_prior(self):
-        notifies = self.fetch_notifies(self.interaction if self.interaction else self.guild)
-        await self._notify(notifies[0], 5)
-        await self._notify(notifies[1], 3)
-        await self._notify(notifies[2], 1)
+        message = ', '.join(member_mentions)
+        return {'embed': embed, 'message': message}
