@@ -55,7 +55,7 @@ class MemberSelect(discord.ui.UserSelect):
         global members
         members = interaction.data['values']
         if self.current_mode == 'tag':
-            await interaction.response.edit_message(view=TagMemberView3(channels=self.channels, members=members), embed=EmbedHandler(step=3, mode='tag').get_embed())
+            await interaction.response.edit_message(view=TagMemberView3(channels=self.channels, members=members), embed=EmbedHandler(interaction).get_embed_tag(3))
         elif self.current_mode == 'untag':
             try:
                 for member in members:
@@ -85,12 +85,16 @@ class DeadlineSelect(discord.ui.Select):
         self.on_error = on_error
     
     async def callback(self, interaction: discord.Interaction):
-        deadline = (datetime.datetime.now() + datetime.timedelta(days=float(interaction.data['values'][0]))).strftime('%Y-%m-%d')
+
+        deadline = (
+            datetime.datetime.now() + datetime.timedelta(days=float(interaction.data['values'][0]))
+            ).strftime('%Y-%m-%d')
+        
         try:
             for member in self.members:
                 for channel in self.channels:
                     handler.tag_member(member, channel, deadline)
-            await interaction.response.edit_message(view=None, embed=EmbedHandler(interaction).get_embed_tag(3))
+            await interaction.response.edit_message(view=None, embed=EmbedHandler(interaction).get_embed_tag(4))
         except Exception as e:
             await interaction.response.edit_message(view=None, embed=EmbedHandler(interaction).get_embed_tag(0))
 
@@ -151,45 +155,45 @@ async def on_error(self, interaction: discord.Interaction, error: Exception=None
 
 class TagMemberView1(discord.ui.View):
     def __init__(self):
-        super().__init__()
+        super().__init__(timeout=60)
         self.add_item(ChannelSelect(current_mode='tag'))
         self.add_item(CancelButton())
 
 class TagMemberView2(discord.ui.View):
     def __init__(self, channels: list[str]):
-        super().__init__()
+        super().__init__(timeout=60)
         self.add_item(MemberSelect(current_mode='tag', channels=channels))
         self.add_item(CancelButton())
 
 class TagMemberView3(discord.ui.View):
     def __init__(self, channels: list[str], members: list[str]):
-        super().__init__()
+        super().__init__(timeout=60)
         self.add_item(DeadlineSelect(channels=channels, members=members))
         self.add_item(CancelButton())
 
 
 class UntagMemberView1(discord.ui.View):
     def __init__(self):
-        super().__init__()
+        super().__init__(timeout=60)
         self.add_item(ChannelSelect(current_mode='untag'))
         self.add_item(CancelButton())
 
 class UntagMemberView2(discord.ui.View):
     def __init__(self, channels: list[str]):
-        super().__init__()
+        super().__init__(timeout=60)
         self.add_item(MemberSelect(current_mode='untag', channels=channels))
         self.add_item(CancelButton())
 
 
 class GetTaggedthreadsView(discord.ui.View):
     def __init__(self):
-        super().__init__()
+        super().__init__(timeout=60)
         self.add_item(GetTaggedthreadsSelect())
         self.add_item(CancelButton())
 
 
 class GetTaggedMembersView(discord.ui.View):
     def __init__(self):
-        super().__init__()
+        super().__init__(timeout=60)
         self.add_item(GetTaggedMembersSelect())
         self.add_item(CancelButton())
