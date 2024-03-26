@@ -28,7 +28,7 @@ class DBHandler:
         except Exception as e:
             logging.error(f"Error creating table: {e}")
 
-    def put(self, item: dict[str, str | int | float | list[str] | list[int] | list[float]]):
+    def put(self, item: dict[str]):
         try:
             self.table.put_item(Item=item)
             return True
@@ -117,12 +117,14 @@ class MemberTaggerDBHandler(DBHandler):
         if item:
             result = {k: v for k, v in item.items() if k != 'member_id'}
             return result
-        return None
+        else:
+            return {}
 
-    def get_tagged_members(self, thread_id: str) -> dict[str, str | int | float | list[str] | list[int] | list[float]]:
+    def get_tagged_members(self, thread_id: str) -> dict[str, str | int | list[str] | list[int]]:
         items = self.table.scan().get('Items', [])
         member_ids = [item['member_id'] for item in items if str(thread_id) in item]
-        deadline = str([item[str(thread_id)] for item in items if str(thread_id) in item][0])
+        deadline = [item[str(thread_id)] for item in items if str(thread_id) in item]
+        deadline = deadline[0] if deadline else None
         result = {'ids': member_ids, 'deadline': deadline}
         return result
 
@@ -138,44 +140,57 @@ class MemberTaggerDBHandler(DBHandler):
             result[member_id] = {k: v for k, v in item.items()}
         return result
 
+
 class MemberTaggerNotifyDBHandler(DBHandler):
     '''
     db architecture:
     {
-        'member_id': {
-            'notify': bool
+        'guild_id': guild_id(int),
+        'info': {
+            member_id(int): notify(bool)
         }
     }
     '''
     def __init__(self):
         super().__init__('member_tagger_notify')
     
-    def set_notify_state(self, member_id: str, notify: bool):
-        self.put({'member_id': member_id, 'notify': notify})
+    def set_guild_id(self, guild_id: int):
+        self.put({'guild_id': guild_id, 'info': {}})
+        return True
     
-    def get_notify_state(self, member_id: str) -> bool | None:
-        item = self.get({'member_id': member_id})
-        return item.get('notify', None)
+    def set_notify_state(self, guild_id: int, member_id: int, notify: bool):
+        member_id = str(member_id)
+        item = self.get({'guild_id': guild_id})
+        data = item['info'] if item else {}
+        data[member_id] = notify
+        self.put({'guild_id': guild_id, 'info': data})
+
     
-    def get_notify_validity_members(self) -> list[str]:
+    def get_notify_state(self, guild_id: int, member_id: int) -> bool | None:
+        member_id = int(member_id)
+        item = self.get({'guild_id': guild_id})
+        return item['info'].get(member_id, None) if item else None
+    
+    def get_guild_notify_states(self, guild_id: int) -> dict[int, bool]:
+        item = self.get({'guild_id': guild_id})
+        return item['info'] if item else {}
+    
+    def get_guilds(self) -> list[int]:
         items = self.table.scan().get('Items', [])
-        return [item['member_id'] for item in items if item['notify']]
+        return [item['guild_id'] for item in items]
+
+    def toggle_notify_state(self, guild_id: int, member_id: int) -> bool:
+        member_id = str(member_id)
+        item = self.get({'guild_id': guild_id})
+        data = item['info'] if item else {}
+        data[member_id] = not data.get(member_id, False)
+        self.put({'guild_id': guild_id, 'info': data})
+        return data[member_id]
     
-    def get_all_notify_states(self) -> dict[str, bool]:
-        items = self.table.scan().get('Items', [])
-        return {item['member_id']: item['notify'] for item in items}
-    
-    def toggle_notify(self, member_id: str):
-        try:
-            item = self.get({'member_id': member_id})
-            if item:
-                self.update({'member_id': member_id}, 'SET notify = :notify', {':notify': not item['notify']})
-            else:
-                self.set_notify(member_id, True)
-            return True
-        except Exception as e:
-            logging.error(f"Error toggling notify: {e}")
-            return False
+    def get_members(self, guild_id: int) -> list[int]:
+        '''for sync with guild members'''
+        item = self.get({'guild_id': guild_id})
+        return list(item['info'].keys()) if item else []
 
 
 if __name__ == '__main__':
