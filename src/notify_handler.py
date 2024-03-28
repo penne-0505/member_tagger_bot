@@ -125,6 +125,9 @@ class NotifyHandler:
             for content in contents:
                 await channel.send(content=content['message'], embed=content['embed'])
         else:
+            if interaction:
+                await interaction.response.send_message(ephemeral=True, delete_after=5.0, embed=discord.Embed(title='通知するものがありませんでした', color=discord.Color.blue()))
+            else:
             await channel.send(embed=discord.Embed(title='通知するものがありませんでした', color=discord.Color.blue()), silent=True, delete_after=5.0)
         
     # 呼び出す側がループを回す
