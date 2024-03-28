@@ -8,7 +8,7 @@ from discord import app_commands
 from discord.ext import tasks
 from colorama import Fore, Style
 
-from db_handler import MemberTaggerDBHandler, MemberTaggerNotifyDBHandler
+from db_handler import MemberTaggerNotifyDBHandler
 from components.embeds import EmbedHandler
 from components.views import TagMemberView1, UntagMemberView1, GetTaggedthreadsView, GetTaggedMembersView
 from notify_handler import NotifyHandler
@@ -22,7 +22,6 @@ from notify_handler import NotifyHandler
 # TODO: embedにおけるエラーハンドリング、エラーメッセージの表示をより詳細にする
 # TODO: コメント、docstringの充実化
 # TODO: client?のloggingをオーバーライドして、ログが重複しないようにする
-# TODO: 通知のdeadlineから残り日数を計算する処理を、discord.utils.format_dtを活用して簡潔にする
 # TODO: permissionの適切なスコープ設定
 
 # TODO: これをdiscord.utilsのlogging系関数に移行する
@@ -46,9 +45,6 @@ class Client(discord.Client):
             await self.sync_commands()
         logging.info(Fore.GREEN + 'Commands synced' + Style.RESET_ALL)
         
-        await self.set_presence()
-        logging.info(Fore.BLUE + f'Logged in as {self.user.name} ({self.user.id})' + Style.RESET_ALL)
-        
         for guild in self.guilds:
             try:
                 logging.info(Fore.GREEN + f'Joined guild {guild.name} ({guild.id})' + Style.RESET_ALL)
@@ -56,10 +52,30 @@ class Client(discord.Client):
                 await self.notify_handler.notify_member_db_sync()
             except discord.errors.Forbidden:
                 logging.warning(Fore.RED + f'Failed to join guild {guild.name} ({guild.id})' + Style.RESET_ALL)
-        logging.info(Fore.GREEN + 'Notify task started' + Style.RESET_ALL)
+        logging.info(Fore.BLUE + f'Logged in as {self.user.name} ({self.user.id})' + Style.RESET_ALL)
         
+        self.set_presence.start()
+
         logging.info(Fore.GREEN + Style.BRIGHT + 'Bot is ready' + Style.RESET_ALL)
-    
+
+        # 翌日の0時と12時のdatetimeオブジェクトを計算
+        today = datetime.datetime.now().date()
+        midnight = datetime.datetime.combine(today, datetime.time(0, 0))
+        noon = datetime.datetime.combine(today, datetime.time(12, 0))
+
+        # 現在時刻から遅い方の時間までの残り秒数を計算
+        time_until_next = (midnight if midnight > datetime.datetime.now() else noon) - datetime.datetime.now()
+        logging.info(Fore.GREEN + f'Waiting {time_until_next} until next notify' + Style.RESET_ALL)
+        await asyncio.sleep(time_until_next.total_seconds())
+
+        # 遅い方の通知機能を開始
+        if time_until_next.total_seconds() < datetime.timedelta(hours=12).total_seconds():
+            self.notify_very_day.start()
+        else:
+            self.notify_prior_day.start()
+        
+        logging.info(Fore.GREEN + 'Notify task started' + Style.RESET_ALL)
+
     async def on_guild_join(self, guild: discord.Guild):
         logging.info(Fore.GREEN + f'Joined guild {guild.name} ({guild.id})' + Style.RESET_ALL)
         self.notify_handler.guild = guild
@@ -92,33 +108,31 @@ class Client(discord.Client):
         await self.change_presence(
             activity=discord.Game(name=f'/help | Synced {now} (JST)')
         )
-        logging.info(Fore.GREEN + f'Presence set to {now}' + Style.RESET_ALL)
+        logging.info(Fore.GREEN + f'Presence updated at {now}' + Style.RESET_ALL)
     
-    @tasks.loop(time=datetime.time(hour=0, minute=0, second=0))
+    @tasks.loop(hours=24)
     async def notify_very_day(self):
-        guilds = self.notify_handler.db.get_guilds()
-        for guild_id in guilds:
-            self.notify_handler.guild = self.get_guild(guild_id)
-            threads = await self.notify_handler.fetch_tagged_threads()
-            converted = await self.notify_handler.convert_tagged_threads(threads)
-            refined = await self.notify_handler.refine_threads(converted)
-            for days, data in refined.items():
-                await self.notify_handler._notify_for_one_channel(days, data) if days == 0 else None
+        guild_ids = self.notify_handler.db.get_guilds()
+        guilds = [self.get_guild(guild_id) for guild_id in guild_ids]
+        for guild in guilds:
+            self.notify_handler.guild = guild
+            print(guild)
+            await self.notify_handler.notify_now([0])
     
-    @tasks.loop(time=datetime.time(hour=12, minute=0, second=0))
+    @tasks.loop(hours=24)
     async def notify_prior_day(self):
-        guilds = self.notify_handler.db.get_guilds()
-        for guild_id in guilds:
-            self.notify_handler.guild = self.get_guild(guild_id)
-            threads = await self.notify_handler.fetch_tagged_threads()
-            converted = await self.notify_handler.convert_tagged_threads(threads)
-            refined = await self.notify_handler.refine_threads(converted)
-            for days, data in refined.items():
-                await self.notify_handler._notify_for_one_channel(days, data) if days in [1, 3, 5] else None
+        guild_ids = self.notify_handler.db.get_guilds()
+        print(guild_ids)
+        guilds = [self.get_guild(guild_id) for guild_id in guild_ids]
+        print(guilds)
+        for guild in guilds:
+            self.notify_handler.guild = guild
+            await self.notify_handler.notify_now([1, 3, 5])
 
 
 client = Client()
 tree = discord.app_commands.CommandTree(client)
+
 
 ############## slash commands ##############
 
@@ -126,9 +140,12 @@ tree = discord.app_commands.CommandTree(client)
 async def ping_command(interaction: discord.Interaction):
     to_be_shown_data = {
         'Websocket Latency': round(client.latency * 1000),
-        'Message Author': f'{interaction.user.name}',
-        'Author Mention': f'{interaction.user.mention}',
+        'Message Author': f'{interaction.user.mention}',
         'Message Author ID': f'{interaction.user.id}',
+        'Guild': f'{interaction.guild.name}' if interaction.guild else 'DM',
+        'Guild ID': f'{interaction.guild.id}' if interaction.guild else 'DM',
+        'Channel': f'{interaction.channel.name}' if interaction.guild else 'DM',
+        'Channel ID': f'{interaction.channel.id}' if interaction.guild else 'DM',
     }
     await interaction.response.send_message(
         ephemeral=True,
