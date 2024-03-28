@@ -9,6 +9,25 @@ class EmbedHandler:
     def __init__(self, interaction: discord.Interaction):
         self.interaction = interaction
     
+    def __new__(cls, *args, **kwargs):
+        if not hasattr(cls, "_instance"):
+            cls._instance = super(EmbedHandler, cls).__new__(cls)
+        return cls._instance
+    
+    def get_embed_ping(self):
+        data = {
+            'Latency': f'`{round(self.interaction.client.latency * 1000)}ms`',
+            'Now': f'{datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9))).strftime("%Y/%m/%d %H:%M:%S %Z")}',
+            'Message Author': f'{self.interaction.user.mention} (`{self.interaction.user.id}`)',
+            'Guild': f'{self.interaction.guild.name} (`{self.interaction.guild.id}`)' if self.interaction.guild else 'DM',
+            'Channel': f'{self.interaction.channel.mention} (`{self.interaction.channel.id}`)' if self.interaction.guild else 'DM',
+        }
+        return discord.Embed(
+            title='Pong!',
+            description='\n'.join([f'**{key}**: {value}' for key, value in data.items()]),
+            color=discord.Color.green()
+        )
+    
     def get_embed_tag(self, step: int):
         if step == 1:
                 embed = discord.Embed(
