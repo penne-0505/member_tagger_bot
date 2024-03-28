@@ -178,7 +178,7 @@ async def get_tagged_members_command(interaction: discord.Interaction):
 @tree.command(name='notify_toggle', description='通知のON/OFFを切り替えます')
 async def notify_toggle_command(interaction: discord.Interaction):
     notify_db_handler = MemberTaggerNotifyDBHandler()
-    current_notify_state = notify_db_handler.get_notify_state(str(interaction.user.id))
+    current_notify_state = notify_db_handler.get_notify_state(interaction.guild.id, interaction.user.id)
     await interaction.response.send_message(ephemeral=True, embed=EmbedHandler(interaction).get_embed_notify_toggle(1, current_notify_state))
     del notify_db_handler
 
