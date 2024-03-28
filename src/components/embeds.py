@@ -83,9 +83,8 @@ class EmbedHandler:
                         target_channels.append(self.interaction.guild.get_channel_or_thread(int(thread)))
                         channel_deadlines.append(deadline)
                 
-                print(target_channels, channel_deadlines)
                 timezone = datetime.timezone(datetime.timedelta(hours=9))
-                self.channels = [f'・{channel.mention} \n    提出期限 : {deadline}\n    残り : {str((datetime.datetime.strptime(deadline, "%Y-%m-%d").replace(tzinfo=timezone) - datetime.datetime.now(timezone)).days)} 日' for channel, deadline in zip(target_channels, channel_deadlines)]
+                self.channels = [f'・{channel.mention} \n    提出期限 : {deadline}\n    残り : {str((datetime.datetime.strptime(deadline, "%Y-%m-%d").replace(tzinfo=timezone) - datetime.datetime.now(timezone)).days + 1)} 日' for channel, deadline in zip(target_channels, channel_deadlines)]
                 embed = discord.Embed(
                     title='**取得結果：**\n' + '\n\n'.join([f'{thread}' for thread in self.channels]),
                     color=discord.Color.green(),
