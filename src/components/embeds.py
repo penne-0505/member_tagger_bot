@@ -17,7 +17,7 @@ class EmbedHandler:
     def get_embed_ping(self):
         data = {
             'Latency': f'`{round(self.interaction.client.latency * 1000)}ms`',
-            'Now': f'{datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9))).strftime("%Y/%m/%d %H:%M:%S %Z")}',
+            'Now': f'{datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9))).strftime("%Y/%m/%d %H:%M:%S  timezone: %Z")}',
             'Message Author': f'{self.interaction.user.mention} (`{self.interaction.user.id}`)',
             'Guild': f'{self.interaction.guild.name} (`{self.interaction.guild.id}`)' if self.interaction.guild else 'DM',
             'Channel': f'{self.interaction.channel.mention} (`{self.interaction.channel.id}`)' if self.interaction.guild else 'DM',
