@@ -71,6 +71,10 @@ class EmbedHandler:
             for thread, members in threads.items():
                 tagged_members.append(f'・{self.interaction.guild.get_channel_or_thread(int(thread)).mention} : {", ".join([self.interaction.guild.get_member(int(member)).mention for member in members])}')
             
+            if not tagged_members:
+                embed = discord.Embed(title='取得結果：', description='タグ付けされたメンバーはいませんでした', color=discord.Color.green())
+                return embed
+            
             embed = discord.Embed(
                 title='2. メンバーを選択',
                 description=f'投稿からタグ付けを解除するメンバーを選択してください\n\n' + '\n\n'.join([f'{thread}' for thread in tagged_members]),
