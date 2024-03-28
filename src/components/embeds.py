@@ -59,7 +59,7 @@ class EmbedHandler:
                 embed = self.get_embed_error(title='エラーが発生しました (unknown error)')
         return embed
     
-    def get_embed_untag(self, step: int, interaction: discord.Interaction):
+    def get_embed_untag(self, step: int):
         if step == 1:
             embed = discord.Embed(
                 title='1. 投稿を選択',
@@ -77,7 +77,7 @@ class EmbedHandler:
         else:
             if not step:
                 embed = self.get_embed_error(title='エラーが発生しました (step is None or invalid)')
-            elif not interaction:
+            elif not self.interaction:
                 embed = self.get_embed_error(title='エラーが発生しました (interaction is None or invalid)')
             else:
                 embed = self.get_embed_error(title='エラーが発生しました (unknown error)')
