@@ -35,7 +35,8 @@ class ChannelSelect(discord.ui.ChannelSelect):
         if self.current_mode == 'tag':
             await interaction.response.edit_message(view=TagMemberView2(channels=channels), embed=EmbedHandler(interaction).get_embed_tag(2))
         elif self.current_mode == 'untag':
-            await interaction.response.edit_message(view=UntagMemberView2(channels=channels), embed=EmbedHandler(interaction).get_embed_untag(2))
+            threads = handler.get_tagged_members(str(channels[0]))
+            await interaction.response.edit_message(view=UntagMemberView2(channels=channels), embed=EmbedHandler(interaction).get_embed_untag(2, threads))
         else:
             raise ValueError('current_mode must be either "tag" or "untag"')
 

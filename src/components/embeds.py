@@ -59,7 +59,7 @@ class EmbedHandler:
                 embed = self.get_embed_error(title='エラーが発生しました (unknown error)')
         return embed
     
-    def get_embed_untag(self, step: int):
+    def get_embed_untag(self, step: int, threads: dict[str, str] | None = None):
         if step == 1:
             embed = discord.Embed(
                 title='1. 投稿を選択',
@@ -67,9 +67,13 @@ class EmbedHandler:
                 color=discord.Color.blue()
             )
         elif step == 2:
+            tagged_members = []
+            for thread, members in threads.items():
+                tagged_members.append(f'・{self.interaction.guild.get_channel_or_thread(int(thread)).mention} : {", ".join([self.interaction.guild.get_member(int(member)).mention for member in members])}')
+            
             embed = discord.Embed(
                 title='2. メンバーを選択',
-                description='投稿からタグ付けを解除するメンバーを選択してください',
+                description=f'投稿からタグ付けを解除するメンバーを選択してください\n\n' + '\n\n'.join([f'{thread}' for thread in tagged_members]),
                 color=discord.Color.blue()
             )
         elif step == 3:
