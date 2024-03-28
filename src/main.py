@@ -24,6 +24,7 @@ from notify_handler import NotifyHandler
 # TODO: client?のloggingをオーバーライドして、ログが重複しないようにする
 # TODO: permissionの適切なスコープ設定
 # TODO: interactionのextrasを使って情報のやり取り出来る情報が無いか見てみる
+# ! 全体的な処理構造を見直す(特にViewやEmbed、そこでやりとりするデータの流れ)
 
 # TODO: これをdiscord.utilsのlogging系関数に移行する
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
