@@ -77,7 +77,7 @@ class EmbedHandler:
             
             embed = discord.Embed(
                 title='2. メンバーを選択',
-                description=f'投稿からタグ付けを解除するメンバーを選択してください\n\n' + '\n\n'.join([f'{member.mention}' for member in tagged_members]),
+                description=f'投稿からタグ付けを解除するメンバーを選択してください\n\nタグ付けされているメンバー: ' + '\n'.join([f'{member.mention}' for member in tagged_members]),
                 color=discord.Color.blue()
             )
         elif step == 3:
