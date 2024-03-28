@@ -1,29 +1,23 @@
 import datetime
 
 import discord
-from discord.ext import tasks
 
 from db_handler import MemberTaggerNotifyDBHandler, MemberTaggerDBHandler
 
-'''
-1. 規定時刻まで待つ(12時か0時)(これはtask.loopで時刻を指定して実行する)
-2. ギルドごとに
-    1. タグ付けされた投稿とメンバーの辞書を取得
-    2. {member: {thread_id: deadline}, ...}となっている辞書を{thread_id: {'members': [member_id, ...], 'deadline': deadline}に変換
-    3. notifyがTrueのメンバーに対して、deadlineが近づいている投稿を取得
-    4. 通知をthreadごとに送信
-3. 変数を初期化して、1に戻る
-'''
 
 class NotifyHandler:
     def __init__(self, guild: discord.Guild | None = None, interaction: discord.Interaction | None = None):
         if guild or interaction:
             self.guild = guild if guild else interaction.guild
-        else:
-            print('guild or interaction is not given (ignored)')
+        
         self._interaction = interaction # it wont be used
         self.db = MemberTaggerNotifyDBHandler()
         self.tag_db = MemberTaggerDBHandler()
+    
+    def __new__(cls, *args, **kwargs):
+        if not hasattr(cls, '_instance'):
+            cls._instance = super().__new__(cls)
+        return cls._instance
     
     async def notify_member_db_sync(self) -> bool:
         if not self.guild:
@@ -108,7 +102,7 @@ class NotifyHandler:
             for data in refined[days].values():
                 await self._notify_for_one_channel(days, data)
     
-    async def notify_now_to_channel(self, channel: discord.TextChannel | discord.Thread):
+    async def notify_now_to_channel(self, channel: discord.TextChannel | discord.Thread, interaction: discord.Interaction | None = None):
         if not self.guild:
             raise ValueError('guild is not set')
         
@@ -128,7 +122,7 @@ class NotifyHandler:
             if interaction:
                 await interaction.response.send_message(ephemeral=True, delete_after=5.0, embed=discord.Embed(title='通知するものがありませんでした', color=discord.Color.blue()))
             else:
-            await channel.send(embed=discord.Embed(title='通知するものがありませんでした', color=discord.Color.blue()), silent=True, delete_after=5.0)
+                await channel.send(embed=discord.Embed(title='通知するものがありませんでした', color=discord.Color.blue()), silent=True, delete_after=5.0)
         
     # 呼び出す側がループを回す
     async def _notify_for_one_channel(self, days: int, data: dict[discord.Thread | discord.TextChannel, dict[str, list[discord.Member] | datetime.datetime]]) -> dict[str, discord.Embed | str]:
