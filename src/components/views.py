@@ -5,14 +5,14 @@ import discord
 from components.embeds import EmbedHandler
 from db_handler import MemberTaggerDBHandler as DBHandler
 
-
+# ? クラス側で__new__でシングルトンにしたほうがいい？
 handler = DBHandler()
 
 select_types = [
     discord.ChannelType.public_thread,
     discord.ChannelType.private_thread,
 ]
-# FIXME: decide better variable name :(
+# FIXME: decide better name of me :(
 select_types_for_tagged_mem = [
     discord.ChannelType.public_thread,
     discord.ChannelType.private_thread,
