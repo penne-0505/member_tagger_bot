@@ -93,7 +93,8 @@ class NotifyHandler:
                 refined[days][thread] = data
         return refined
 
-    async def notify_now(self):
+    async def notify_now(self, target_days: int | list[int] = 0):
+        '''target_days expects 0, 1, 3, 5\nif target_days is not given, notify all threads'''
         if not self.guild:
             raise ValueError('guild is not set')
         
@@ -101,8 +102,11 @@ class NotifyHandler:
         threads = await self.fetch_tagged_threads()
         converted = await self.convert_tagged_threads(threads)
         refined = await self.refine_threads(converted)
-        for days, data in refined.items():
-            await self._notify_for_one_channel(days, data)
+        if isinstance(target_days, int):
+            target_days = [target_days]
+        for days in target_days:
+            for data in refined[days].values():
+                await self._notify_for_one_channel(days, data)
     
     async def notify_now_to_channel(self, channel: discord.TextChannel | discord.Thread):
         if not self.guild:
