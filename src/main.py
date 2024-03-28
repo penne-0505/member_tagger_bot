@@ -23,6 +23,7 @@ from notify_handler import NotifyHandler
 # TODO: コメント、docstringの充実化
 # TODO: client?のloggingをオーバーライドして、ログが重複しないようにする
 # TODO: permissionの適切なスコープ設定
+# TODO: interactionのextrasを使って情報のやり取り出来る情報が無いか見てみる
 
 # TODO: これをdiscord.utilsのlogging系関数に移行する
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -39,7 +40,6 @@ class Client(discord.Client):
     
     async def on_ready(self):
         logging.info(Fore.YELLOW + 'Bot is starting...' + Style.RESET_ALL)
-        logging.info(Fore.YELLOW + 'Syncing commands...' + Style.RESET_ALL)
         
         if not self.synced:
             await self.sync_commands()
@@ -58,21 +58,27 @@ class Client(discord.Client):
 
         logging.info(Fore.GREEN + Style.BRIGHT + 'Bot is ready' + Style.RESET_ALL)
 
-        # 翌日の0時と12時のdatetimeオブジェクトを計算
-        today = datetime.datetime.now().date()
-        midnight = datetime.datetime.combine(today, datetime.time(0, 0))
-        noon = datetime.datetime.combine(today, datetime.time(12, 0))
+        timezone = datetime.timezone(datetime.timedelta(hours=9))
+        today = datetime.datetime.now(timezone).date()
+        midnight = datetime.datetime.combine(today, datetime.time(0, 0), tzinfo=timezone)
+        noon = datetime.datetime.combine(today, datetime.time(12, 0), tzinfo=timezone)
 
-        # 現在時刻から遅い方の時間までの残り秒数を計算
-        time_until_next = (midnight if midnight > datetime.datetime.now() else noon) - datetime.datetime.now()
-        logging.info(Fore.GREEN + f'Waiting {time_until_next} until next notify' + Style.RESET_ALL)
-        await asyncio.sleep(time_until_next.total_seconds())
+        time_to_notify = (midnight if midnight > datetime.datetime.now(timezone) else noon) - datetime.datetime.now(timezone)
+        time_to_notify_dt = datetime.datetime.now(timezone) + time_to_notify
+        
+        notify_mode = 'prior' if time_to_notify_dt.time() == datetime.time(12, 0) else 'very'
+        
+        time_to_notify_dt = Fore.LIGHTMAGENTA_EX + datetime.datetime.strftime(time_to_notify_dt, '%Y/%m/%d %H:%M:%S') + Style.RESET_ALL + Fore.GREEN
+        logging.info(Fore.GREEN + f'Wait for {time_to_notify_dt}' + Style.RESET_ALL)
+        
+        await asyncio.sleep(time_to_notify.total_seconds())
 
-        # 遅い方の通知機能を開始
-        if time_until_next.total_seconds() < datetime.timedelta(hours=12).total_seconds():
+        if notify_mode == 'prior':
+            self.notify_prior_day.start()
+        elif notify_mode == 'very':
             self.notify_very_day.start()
         else:
-            self.notify_prior_day.start()
+            logging.error(Fore.RED + 'Failed to start notify tasks' + Style.RESET_ALL)
         
         logging.info(Fore.GREEN + 'Notify task started' + Style.RESET_ALL)
 
@@ -103,12 +109,14 @@ class Client(discord.Client):
     @tasks.loop(minutes=10)
     async def set_presence(self):
         timezone = datetime.timezone(datetime.timedelta(hours=9))
-        now = datetime.datetime.now(timezone).strftime('%H:%M')
+        now = datetime.datetime.now(timezone)
+        now_fmt_hm = now.strftime('%H:%M')
+        now_fmt_ymd_hms = now.strftime('%Y/%m/%d %H:%M:%S')
         await self.sync_commands()
         await self.change_presence(
-            activity=discord.Game(name=f'/help | Synced {now} (JST)')
+            activity=discord.Game(name=f'/help | Synced {now_fmt_hm} (JST)')
         )
-        logging.info(Fore.GREEN + f'Presence updated at {now}' + Style.RESET_ALL)
+        logging.info(Fore.GREEN + f'Presence updated at {now_fmt_ymd_hms}' + Style.RESET_ALL)
     
     @tasks.loop(hours=24)
     async def notify_very_day(self):
@@ -138,23 +146,7 @@ tree = discord.app_commands.CommandTree(client)
 
 @tree.command(name='ping', description='pong')
 async def ping_command(interaction: discord.Interaction):
-    to_be_shown_data = {
-        'Websocket Latency': round(client.latency * 1000),
-        'Message Author': f'{interaction.user.mention}',
-        'Message Author ID': f'{interaction.user.id}',
-        'Guild': f'{interaction.guild.name}' if interaction.guild else 'DM',
-        'Guild ID': f'{interaction.guild.id}' if interaction.guild else 'DM',
-        'Channel': f'{interaction.channel.name}' if interaction.guild else 'DM',
-        'Channel ID': f'{interaction.channel.id}' if interaction.guild else 'DM',
-    }
-    await interaction.response.send_message(
-        ephemeral=True,
-        embed=discord.Embed(
-            title='Pong!',
-            description='\n'.join([f'**{key}**: {value}' for key, value in to_be_shown_data.items()]),
-            color=discord.Color.green()
-        )
-    )
+    await interaction.response.send_message(ephemeral=True, embed=EmbedHandler(interaction).get_embed_ping())
 
 @tree.command(name='help', description='コマンド一覧を表示します')
 async def help(interaction: discord.Interaction):
@@ -194,7 +186,7 @@ async def notify_toggle_command(interaction: discord.Interaction):
 async def notify_now_command(interaction: discord.Interaction, send_here: bool = False):
     notify_handler = client.notify_handler
     notify_handler.guild = interaction.guild
-    await notify_handler.notify_now_to_channel(interaction.channel) if send_here else await notify_handler.notify_now()
+    await notify_handler.notify_now_to_channel(interaction.channel, interaction) if send_here else await notify_handler.notify_now()
 
 @tree.command(name='invite', description='このBotの招待リンクを表示します')
 async def invite_command(interaction: discord.Interaction):
