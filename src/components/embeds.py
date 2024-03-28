@@ -69,6 +69,7 @@ class EmbedHandler:
         elif step == 2:
             tagged_members = []
             for thread, members in threads.items():
+                print(thread, members)
                 tagged_members.append(f'・{self.interaction.guild.get_channel_or_thread(int(thread)).mention} : {", ".join([self.interaction.guild.get_member(int(member)).mention for member in members])}')
             
             if not tagged_members:
