@@ -133,6 +133,7 @@ class MemberTaggerDBHandler(DBHandler):
         return item.get(str(thread_id), None)
 
     def get_all_tagged_threads(self) -> dict[str, dict[str, str]]:
+        '''return: {member_id: {thread_id: deadline}}'''
         items = self.table.scan().get('Items', [])
         result = {}
         for item in items:

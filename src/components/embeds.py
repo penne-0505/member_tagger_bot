@@ -3,11 +3,14 @@ from typing import Any
 
 import discord
 
+from db_handler import MemberTaggerDBHandler
+
 # TODO: implement better variable type validation
 
 class EmbedHandler:
     def __init__(self, interaction: discord.Interaction):
         self.interaction = interaction
+        self.db_handler = MemberTaggerDBHandler()
     
     def __new__(cls, *args, **kwargs):
         if not hasattr(cls, "_instance"):
@@ -72,7 +75,7 @@ class EmbedHandler:
                 tagged_members.append(self.interaction.guild.get_member(int(member_id)))
             
             if not tagged_members:
-                embed = discord.Embed(title='取得結果：', description='タグ付けされたメンバーはいませんでした', color=discord.Color.green())
+                embed = discord.Embed(title='取得結果：', description='タグ付けされたメンバーはいません�����した', color=discord.Color.green())
                 return embed
             
             embed = discord.Embed(
@@ -175,6 +178,43 @@ class EmbedHandler:
                 embed = self.get_embed_error(title='エラーが発生しました (unknown error)')
         return embed
     
+    def format_member_threads(self, refined_threads: dict[str, dict[str, str]]):
+        def format_thread(thread_id, deadline):
+            channel = self.interaction.guild.get_channel_or_thread(int(thread_id))
+            if channel:
+                return f'    **{channel.mention}** : {deadline}'
+            return None
+
+        def format_member(member_id, threads: dict[str, str]):
+            member = self.interaction.guild.get_member(int(member_id))
+            if member:
+                threads_str = '\n - '.join(thread for thread in (format_thread(thread_id, deadline) for thread_id, deadline in threads.items()) if thread)
+                if threads_str:
+                    return f'- **{member.mention} :** \n    - {threads_str}'
+            return None
+
+        return '\n\n'.join(member for member in (format_member(member_id, threads) for member_id, threads in refined_threads.items()) if member)
+    
+    def get_embed_all_tagged_members(self, step: int | None = None):
+        
+        if step == 1:
+            all_threads = self.db_handler.get_all_tagged_threads()
+            refined_threads = {member_id: threads for member_id, threads in all_threads.items() if threads}
+            description = self.format_member_threads(refined_threads)
+            embed = discord.Embed(
+                title='取得結果：',
+                description=description,
+                color=discord.Color.green()
+            )
+        else:
+            if not step:
+                embed = self.get_embed_error(title='エラーが発生しました (step is None or invalid)')
+            elif not self.interaction:
+                embed = self.get_embed_error(title='エラーが発生しました (interaction is None or invalid)')
+            else:
+                embed = self.get_embed_error(title='エラーが発生しました (unknown error)')
+        return embed
+    
     def get_embed_notify_toggle(self, step: int, current_state: bool | None = None):
         if step == 1:
             embed = discord.Embed(
@@ -226,7 +266,7 @@ class EmbedHandler:
     def get_embed_success(self, task: str = None, title: str = None, description: str = None):
         task = task if task else '処理'
         return discord.Embed(
-            title=f'{task}が完了しました' if not title else title,
+            title=f'{task}が完了しまし���' if not title else title,
             description=None if not description else description,
             color=discord.Color.green()
         )

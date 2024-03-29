@@ -8,7 +8,7 @@ from discord import app_commands
 from discord.ext import tasks
 from colorama import Fore, Style
 
-from db_handler import MemberTaggerNotifyDBHandler
+from db_handler import MemberTaggerNotifyDBHandler, MemberTaggerDBHandler
 from components.embeds import EmbedHandler
 from components.views import TagMemberView1, UntagMemberView1, GetTaggedthreadsView, GetTaggedMembersView
 from notify_handler import NotifyHandler
@@ -76,12 +76,12 @@ class Client(discord.Client):
 
         if notify_mode == 'prior':
             self.notify_prior_day.start()
+            logging.info(Fore.GREEN + 'Notify task started' + Style.RESET_ALL)
         elif notify_mode == 'very':
             self.notify_very_day.start()
+            logging.info(Fore.GREEN + 'Notify task started' + Style.RESET_ALL)
         else:
             logging.error(Fore.RED + 'Failed to start notify tasks' + Style.RESET_ALL)
-        
-        logging.info(Fore.GREEN + 'Notify task started' + Style.RESET_ALL)
 
     async def on_guild_join(self, guild: discord.Guild):
         logging.info(Fore.GREEN + f'Joined guild {guild.name} ({guild.id})' + Style.RESET_ALL)
@@ -175,6 +175,10 @@ async def get_tagged_threads_command(interaction: discord.Interaction):
 @tree.command(name="tagged_members", description="スレッドにタグ付けされているメンバーを表示します")
 async def get_tagged_members_command(interaction: discord.Interaction):
     await interaction.response.send_message(ephemeral=True, view=GetTaggedMembersView(), embed=EmbedHandler(interaction).get_embed_get_tagged_members(1))
+
+@tree.command(name='all_tagged_members', description='全てのタグ付けされたメンバーとそのタグ付けされたスレッドを表示します')
+async def all_tagged_members_command(interaction: discord.Interaction):
+    await interaction.response.send_message(ephemeral=True, embed=EmbedHandler(interaction).get_embed_all_tagged_members(1))
 
 @tree.command(name='notify_toggle', description='通知のON/OFFを切り替えます')
 async def notify_toggle_command(interaction: discord.Interaction):
