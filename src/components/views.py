@@ -145,8 +145,8 @@ class CancelButton(discord.ui.Button):
         await interaction.response.edit_message(view=discord.abc.MISSING, embed=EmbedHandler(interaction).get_embed_cancel())
 
 class ConfirmButton(discord.ui.Button):
-    def __init__(self, current_mode: str):
-        super().__init__(label='OK', style=discord.ButtonStyle.primary, row=0)
+    def __init__(self, current_mode: str, label: str = 'OK'):
+        super().__init__(label=label, style=discord.ButtonStyle.primary, row=0)
         self.interaction_check = interaction_check
         self.on_error = on_error
         self.current_mode = str(current_mode)
@@ -219,7 +219,7 @@ class GetTaggedMembersView(discord.ui.View):
 
 
 class NotifyToggleView(discord.ui.View):
-    def __init__(self):
+    def __init__(self, label: str = 'OK'):
         super().__init__(timeout=60)
-        self.add_item(ConfirmButton(current_mode='notify_toggle'))
+        self.add_item(ConfirmButton(current_mode='notify_toggle', label=label))
         self.add_item(CancelButton())

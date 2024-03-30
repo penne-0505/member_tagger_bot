@@ -192,7 +192,7 @@ async def all_tagged_members_command(interaction: discord.Interaction):
 async def notify_toggle_command(interaction: discord.Interaction):
     notify_db_handler = MemberTaggerNotifyDBHandler()
     current_notify_state = notify_db_handler.get_notify_state(interaction.guild.id, interaction.user.id)
-    await interaction.response.send_message(ephemeral=True, view=NotifyToggleView(), embed=EmbedHandler(interaction).get_embed_notify_toggle(1, current_notify_state))
+    await interaction.response.send_message(ephemeral=True, view=NotifyToggleView(label='切り替える'), embed=EmbedHandler(interaction).get_embed_notify_toggle(1, current_notify_state))
     del notify_db_handler
 
 @tree.command(name='notify_now', description='タグ付けされたメンバーに、今すぐ通知を送ります（通常は毎日12時, 24時に自動で送信されます）')
