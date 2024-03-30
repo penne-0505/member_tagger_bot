@@ -14,11 +14,13 @@ class NotifyHandler:
         self.db = MemberTaggerNotifyDBHandler()
         self.tag_db = MemberTaggerDBHandler()
     
+    # シングルトンパターン用
     def __new__(cls, *args, **kwargs):
         if not hasattr(cls, '_instance'):
             cls._instance = super().__new__(cls)
         return cls._instance
     
+    # 現在参加しているguildとそのメンバーをDBに同期する
     async def notify_member_db_sync(self) -> bool:
         if not self.guild:
             raise ValueError('guild is not set')
@@ -37,6 +39,7 @@ class NotifyHandler:
         if not self.guild:
             raise ValueError('guild is not set')
         
+        # データを取得して、{member_id: {thread_id: deadline}}の形式で返す
         member_ids = self.db.get_members(self.guild.id)
         threads = {}
         for member_id in member_ids:
@@ -53,7 +56,7 @@ class NotifyHandler:
         if not self.guild:
             raise ValueError('guild is not set')
         
-        timezone = datetime.timezone(datetime.timedelta(hours=9))
+        timezone = datetime.timezone(datetime.timedelta(hours=9)) # JST
         converted = {}
         for member_id, thread_dict in threads.items():
             for thread_id, deadline in thread_dict.items():
@@ -75,8 +78,9 @@ class NotifyHandler:
         if not self.guild:
             raise ValueError('guild is not set')
         
-        timezone = datetime.timezone(datetime.timedelta(hours=9))
+        timezone = datetime.timezone(datetime.timedelta(hours=9)) # JST
         now = datetime.datetime.now(timezone)
+        # threadsを日付ごとに整理(5, 3, 1, 0以外は削除)
         refined = {5: {}, 3: {}, 1: {}, 0: {}}
         for thread, data in threads.items():
             deadline = data['deadline']
