@@ -217,12 +217,17 @@ class EmbedHandler:
     
     def get_embed_notify_toggle(self, step: int, current_state: bool | None = None):
         if step == 1:
+            title = '通知を送らない設定にしますか？ (**OFF**)' if not current_state else '通知を送る設定にしますか？ (**ON**)'
             embed = discord.Embed(
-                title=f'通知をON/OFFに切り替えますか？ (現在の状態 : {"ON" if current_state else "OFF"})',
+                title=title,
                 color=discord.Color.blue()
             )
         elif step == 2:
-            embed = self.get_embed_success(f'通知のON/OFFを切り替えました (現在の状態 : {"ON" if current_state else "OFF"})')
+            title = '通知を送らない設定にしました (**OFF**)' if not current_state else '通知を送る設定にしました (**ON**)'
+            embed = discord.Embed(
+                title=title,
+                color=discord.Color.green()
+            )
         else:
             if not step:
                 embed = self.get_embed_error(title='エラーが発生しました (step is None or invalid)')
