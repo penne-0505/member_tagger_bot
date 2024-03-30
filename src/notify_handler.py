@@ -111,19 +111,25 @@ class NotifyHandler:
         threads = await self.fetch_tagged_threads()
         converted = await self.convert_tagged_threads(threads)
         refined = await self.refine_threads(converted)
+        
         content_0 = [await self._get_notify_content(0, data) for data in refined[0].values()]
         content_1 = [await self._get_notify_content(1, data) for data in refined[1].values()]
         content_3 = [await self._get_notify_content(3, data) for data in refined[3].values()]
         content_5 = [await self._get_notify_content(5, data) for data in refined[5].values()]
         contents = content_0 + content_1 + content_3 + content_5
-        if contents:
+        
+        if contents and interaction:
+            for content in contents:
+                await interaction.response.send_message(ephemeral=True, embed=content['embed'], content=content['message'])
+        elif contents and not interaction:
             for content in contents:
                 await channel.send(content=content['message'], embed=content['embed'])
+        elif not contents and interaction:
+            await interaction.response.send_message(ephemeral=True, delete_after=5.0, embed=discord.Embed(title='通知するものがありませんでした。', color=discord.Color.blue()))
+        elif not contents and not interaction:
+            await channel.send(embed=discord.Embed(title='通知するものがありませんでした。', color=discord.Color.blue()), silent=True, delete_after=5.0)
         else:
-            if interaction:
-                await interaction.response.send_message(ephemeral=True, delete_after=5.0, embed=discord.Embed(title='通知するものがありませんでした。', color=discord.Color.blue()))
-            else:
-                await channel.send(embed=discord.Embed(title='通知するものがありませんでした。', color=discord.Color.blue()), silent=True, delete_after=5.0)
+            await interaction.response.send_message(ephemeral=True, delete_after=5.0, embed=discord.Embed(title='通知するものがありませんでした。', description='想定外のケースです。よろしければ管理者に連絡してください。',  color=discord.Color.yellow()))
     
     # 呼び出す側がループを回す
     async def _notify_for_one_channel(self, days: int, data: dict[discord.Thread | discord.TextChannel, dict[str, list[discord.Member] | datetime.datetime]]) -> dict[str, discord.Embed | str]:
