@@ -82,7 +82,7 @@ class NotifyHandler:
             deadline = data['deadline']
             if not deadline:
                 continue
-            days = (deadline - now).days
+            days = (deadline - now).days + 1
             if days in refined:
                 refined[days][thread] = data
         return refined
