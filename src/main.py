@@ -155,7 +155,7 @@ tree = discord.app_commands.CommandTree(client)
 
 @tree.command(name='ping', description='テスト用の情報を返します')
 async def ping_command(interaction: discord.Interaction):
-    await interaction.response.send_message(ephemeral=True, embed=EmbedHandler(interaction).get_embed_ping())
+    await interaction.response.send_message(ephemeral=True, embed=EmbedHandler(interaction).get_embed_ping(), content=str(MemberTaggerNotifyDBHandler().get_notify_state(interaction.guild.id, interaction.user.id)))
 
 @tree.command(name='help', description='コマンド一覧を表示します')
 async def help(interaction: discord.Interaction):
