@@ -218,7 +218,7 @@ class EmbedHandler:
     def get_embed_notify_toggle(self, step: int, current_state: bool | None = None):
         if step == 1:
             embed = discord.Embed(
-                title=f'通議をON/OFFに切り替えます (現在の状態 : {"ON" if current_state else "OFF"})',
+                title=f'通知をON/OFFに切り替えます (現在の状態 : {"ON" if current_state else "OFF"})',
                 color=discord.Color.blue()
             )
         elif step == 2:
