@@ -29,6 +29,7 @@ intents = discord.Intents.all()
 class Client(discord.Client):
     def __init__(self):
         super().__init__(intents=intents)
+        # 毎回確実にコマンドを同期させるために、syncedフラグを手動で設定
         self.synced = False
         self.notify_handler = NotifyHandler()
     
@@ -38,9 +39,10 @@ class Client(discord.Client):
         logging.info(Fore.YELLOW + 'Bot is starting...' + Style.RESET_ALL)
         
         if not self.synced:
-            await self.sync_commands()
+            await self.sync_commands() # treeコマンドの同期
         logging.info(Fore.GREEN + 'Commands synced' + Style.RESET_ALL)
         
+        # botが参加しているguildのメンバーとDBを同期
         for guild in self.guilds:
             try:
                 logging.info(Fore.GREEN + f'Joined guild {guild.name} ({guild.id})' + Style.RESET_ALL)
@@ -50,26 +52,33 @@ class Client(discord.Client):
                 logging.warning(Fore.RED + f'Failed to join guild {guild.name} ({guild.id})' + Style.RESET_ALL)
         logging.info(Fore.BLUE + f'Logged in as {self.user.name} ({self.user.id})' + Style.RESET_ALL)
         
+        # 10分ごとにpresenceを更新するループタスクを開始
         self.set_presence.start()
 
         logging.info(Fore.GREEN + Style.BRIGHT + 'Bot is ready' + Style.RESET_ALL)
 
-        timezone = datetime.timezone(datetime.timedelta(hours=9))
+        ######## ここから通知タスク ########
+        timezone = datetime.timezone(datetime.timedelta(hours=9)) # JST
         today = datetime.datetime.now(timezone).date()
         midnight = datetime.datetime.combine(today, datetime.time(0, 0), tzinfo=timezone)
         noon = datetime.datetime.combine(today, datetime.time(12, 0), tzinfo=timezone)
 
+        # 通知タスクを開始するまでの時間を計算
         time_to_notify = noon - datetime.datetime.now(timezone) if datetime.datetime.now(timezone) < noon else midnight + datetime.timedelta(days=1) - datetime.datetime.now(timezone)
+        # 時刻を算出
         time_to_notify_dt = datetime.datetime.now(timezone) + time_to_notify
 
+        # タスクを始める時に使うモードを決定
         notify_mode = 'prior' if time_to_notify_dt.time() == datetime.time(12, 0) else 'very'
 
         time_to_notify_dt = Fore.LIGHTMAGENTA_EX + datetime.datetime.strftime(time_to_notify_dt, '%Y/%m/%d %H:%M:%S') + Style.RESET_ALL + Fore.GREEN
         logging.info(Fore.GREEN + f'Wait for {time_to_notify_dt}' + Style.RESET_ALL)
         logging.info(Fore.GREEN + f'Notify mode: {notify_mode}' + Style.RESET_ALL)
 
+        # 算出した時間まで待機
         await asyncio.sleep(time_to_notify.total_seconds())
 
+        # 通知タスクを開始
         if notify_mode == 'prior':
             self.notify_prior_day.start()
             logging.info(Fore.GREEN + 'Notify task started' + Style.RESET_ALL)
@@ -79,6 +88,7 @@ class Client(discord.Client):
         else:
             logging.error(Fore.RED + 'Failed to start notify tasks' + Style.RESET_ALL)
 
+    # ギルド参加時にDBとメンバーを同期
     async def on_guild_join(self, guild: discord.Guild):
         logging.info(Fore.GREEN + f'Joined guild {guild.name} ({guild.id})' + Style.RESET_ALL)
         self.notify_handler.guild = guild
@@ -86,12 +96,13 @@ class Client(discord.Client):
         logging.info(Fore.GREEN + 'Notify task started' + Style.RESET_ALL)
         client.sync_commands()
     
+    # コマンドの実行時にログを出力
     async def on_app_command_completion(self, interaction: discord.Interaction, command: app_commands.Command | app_commands.ContextMenu):
         command_name = Fore.YELLOW + command.name + Style.RESET_ALL
         user_name = Fore.BLUE + str(interaction.user.name) + Style.RESET_ALL
         user_id = Fore.BLUE + str(interaction.user.id) + Style.RESET_ALL
         guild = Fore.GREEN + str(interaction.guild.name) + Style.RESET_ALL
-        timezone = datetime.timezone(datetime.timedelta(hours=9))
+        timezone = datetime.timezone(datetime.timedelta(hours=9)) # JST
         time = Fore.MAGENTA + datetime.datetime.now(timezone).strftime("%Y/%m/%d, %H:%M:%S") + Style.RESET_ALL
         logging.info(f'{command_name} called by {user_name} ({user_id}) on {guild} at {time}')
     
@@ -105,7 +116,7 @@ class Client(discord.Client):
     
     @tasks.loop(minutes=10)
     async def set_presence(self):
-        timezone = datetime.timezone(datetime.timedelta(hours=9))
+        timezone = datetime.timezone(datetime.timedelta(hours=9)) # JST
         now = datetime.datetime.now(timezone)
         now_fmt_hm = now.strftime('%H:%M')
         now_fmt_ymd_hms = now.strftime('%Y/%m/%d %H:%M:%S')
@@ -117,14 +128,18 @@ class Client(discord.Client):
     
     @tasks.loop(hours=24)
     async def notify_very_day(self):
+        # dbからguild_idのリストを取得
         guild_ids = self.notify_handler.db.get_guilds()
+        # idをguild(obj)に変換
         guilds = [self.get_guild(guild_id) for guild_id in guild_ids]
+        # guildごとに通知を送信
         for guild in guilds:
             self.notify_handler.guild = guild
             await self.notify_handler.notify_now([0])
     
     @tasks.loop(hours=24)
     async def notify_prior_day(self):
+        # notify_very_dayと同じ
         guild_ids = self.notify_handler.db.get_guilds()
         guilds = [self.get_guild(guild_id) for guild_id in guild_ids]
         for guild in guilds:
@@ -138,7 +153,7 @@ tree = discord.app_commands.CommandTree(client)
 
 ############## slash commands ##############
 
-@tree.command(name='ping', description='pong')
+@tree.command(name='ping', description='テスト用の情報を返します')
 async def ping_command(interaction: discord.Interaction):
     await interaction.response.send_message(ephemeral=True, embed=EmbedHandler(interaction).get_embed_ping())
 
@@ -146,7 +161,6 @@ async def ping_command(interaction: discord.Interaction):
 async def help(interaction: discord.Interaction):
     # このembedは一時的なものなので、EmbedHandlerを使わない
     commands = {command.name: command.description for command in tree.get_commands()}
-    commands['ping'] = 'テスト用の情報を返します'
     embed = discord.Embed(
         title='コマンド一覧',
         description='\n'.join([f'**`/{command}`** : {description}' for command, description in commands.items()]),
