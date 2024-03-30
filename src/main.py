@@ -15,19 +15,13 @@ from notify_handler import NotifyHandler
 
 
 # TODO: DBのローカル化(sqlite3, mysql ...)？
-# __TODO: 毎日規定の時間にタグ付けされたメンバーに通知を送る機能
-# __TODO: 通知のON/OFF機能
-# TODO: pingのembedをEmbedHandlerで作成するようにする
-# TODO: 可能ならば、untagのmember_selectで、tagされているメンバーのみを表示するようにする
-# TODO: embedにおけるエラーハンドリング、エラーメッセージの表示をより詳細にする
 # TODO: コメント、docstringの充実化
 # TODO: client?のloggingをオーバーライドして、ログが重複しないようにする
 # TODO: permissionの適切なスコープ設定
 # TODO: interactionのextrasを使って情報のやり取り出来る情報が無いか見てみる
 # ! 全体的な処理構造を見直す(特にViewやEmbed、そこでやりとりするデータの流れ)
 
-# TODO: これをdiscord.utilsのlogging系関数に移行する
-# FIXME: formatの設定が反映されない
+# !FIXME: formatの設定が反映されない
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s   %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 
 intents = discord.Intents.all()
@@ -150,6 +144,7 @@ async def ping_command(interaction: discord.Interaction):
 
 @tree.command(name='help', description='コマンド一覧を表示します')
 async def help(interaction: discord.Interaction):
+    # このembedは一時的なものなので、EmbedHandlerを使わない
     commands = {command.name: command.description for command in tree.get_commands()}
     commands['ping'] = 'テスト用の情報を返します'
     embed = discord.Embed(
