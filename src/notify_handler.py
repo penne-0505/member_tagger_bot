@@ -96,10 +96,11 @@ class NotifyHandler:
         threads = await self.fetch_tagged_threads()
         converted = await self.convert_tagged_threads(threads)
         refined = await self.refine_threads(converted)
+        print(refined)
         if isinstance(target_days, int):
             target_days = [target_days]
         for days in target_days:
-            for data in refined[days].values():
+            for data in refined[days].items():
                 await self._notify_for_one_channel(days, data)
     
     async def notify_now_to_channel(self, channel: discord.TextChannel | discord.Thread, interaction: discord.Interaction | None = None):
@@ -127,6 +128,7 @@ class NotifyHandler:
     # 呼び出す側がループを回す
     async def _notify_for_one_channel(self, days: int, data: dict[discord.Thread | discord.TextChannel, dict[str, list[discord.Member] | datetime.datetime]]) -> dict[str, discord.Embed | str]:
         for thread, data in data.items():
+            print(thread, data)
             content = await self._get_notify_content(days, data)
             embed = content['embed']
             message = content['message']

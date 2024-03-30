@@ -27,7 +27,7 @@ from notify_handler import NotifyHandler
 # ! 全体的な処理構造を見直す(特にViewやEmbed、そこでやりとりするデータの流れ)
 
 # TODO: これをdiscord.utilsのlogging系関数に移行する
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s   %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 
 intents = discord.Intents.all()
 
@@ -64,14 +64,15 @@ class Client(discord.Client):
         midnight = datetime.datetime.combine(today, datetime.time(0, 0), tzinfo=timezone)
         noon = datetime.datetime.combine(today, datetime.time(12, 0), tzinfo=timezone)
 
-        time_to_notify = (midnight if midnight > datetime.datetime.now(timezone) else noon) - datetime.datetime.now(timezone)
+        time_to_notify = noon - datetime.datetime.now(timezone) if datetime.datetime.now(timezone) < noon else midnight + datetime.timedelta(days=1) - datetime.datetime.now(timezone)
         time_to_notify_dt = datetime.datetime.now(timezone) + time_to_notify
-        
+
         notify_mode = 'prior' if time_to_notify_dt.time() == datetime.time(12, 0) else 'very'
-        
+
         time_to_notify_dt = Fore.LIGHTMAGENTA_EX + datetime.datetime.strftime(time_to_notify_dt, '%Y/%m/%d %H:%M:%S') + Style.RESET_ALL + Fore.GREEN
         logging.info(Fore.GREEN + f'Wait for {time_to_notify_dt}' + Style.RESET_ALL)
-        
+        logging.info(Fore.GREEN + f'Notify mode: {notify_mode}' + Style.RESET_ALL)
+
         await asyncio.sleep(time_to_notify.total_seconds())
 
         if notify_mode == 'prior':
@@ -125,15 +126,12 @@ class Client(discord.Client):
         guilds = [self.get_guild(guild_id) for guild_id in guild_ids]
         for guild in guilds:
             self.notify_handler.guild = guild
-            print(guild)
             await self.notify_handler.notify_now([0])
     
     @tasks.loop(hours=24)
     async def notify_prior_day(self):
         guild_ids = self.notify_handler.db.get_guilds()
-        print(guild_ids)
         guilds = [self.get_guild(guild_id) for guild_id in guild_ids]
-        print(guilds)
         for guild in guilds:
             self.notify_handler.guild = guild
             await self.notify_handler.notify_now([1, 3, 5])
