@@ -27,6 +27,7 @@ from notify_handler import NotifyHandler
 # ! 全体的な処理構造を見直す(特にViewやEmbed、そこでやりとりするデータの流れ)
 
 # TODO: これをdiscord.utilsのlogging系関数に移行する
+# FIXME: formatの設定が反映されない
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s   %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 
 intents = discord.Intents.all()
