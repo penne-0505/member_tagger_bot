@@ -20,6 +20,20 @@ class NotifyHandler:
             cls._instance = super().__new__(cls)
         return cls._instance
     
+    # 期限が過ぎたスレッドをDBから削除する
+    async def _delete_threads_past_deadline(self):
+        if not self.guild:
+            raise ValueError('guild is not set')
+        
+        timezone = datetime.timezone(datetime.timedelta(hours=9))
+        now = datetime.datetime.now(timezone)
+        threads = await self.fetch_tagged_threads()
+        for member_id, thread_dict in threads.items():
+            for thread_id, deadline in thread_dict.items():
+                deadline = datetime.datetime.strptime(deadline, "%Y-%m-%d").replace(tzinfo=timezone)
+                if deadline < now:
+                    self.tag_db.untag_member(member_id, thread_id)
+    
     # 現在参加しているguildとそのメンバーをDBに同期する
     async def notify_member_db_sync(self) -> bool:
         if not self.guild:
@@ -27,6 +41,8 @@ class NotifyHandler:
         
         if not self.guild.id in self.db.get_guilds():
             self.db.set_guild_id(self.guild.id)
+        
+        await self._delete_threads_past_deadline()
         
         members = self.guild.members
 
