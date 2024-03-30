@@ -168,7 +168,7 @@ class MemberTaggerNotifyDBHandler(DBHandler):
 
     
     def get_notify_state(self, guild_id: int, member_id: int) -> bool | None:
-        member_id = int(member_id)
+        member_id = str(member_id)
         item = self.get({'guild_id': guild_id})
         return item['info'].get(member_id, None) if item else None
     
