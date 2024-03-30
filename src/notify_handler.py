@@ -96,7 +96,6 @@ class NotifyHandler:
         threads = await self.fetch_tagged_threads()
         converted = await self.convert_tagged_threads(threads)
         refined = await self.refine_threads(converted)
-        print(refined)
         if isinstance(target_days, int):
             target_days = [target_days]
         for days in target_days:
