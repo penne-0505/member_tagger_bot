@@ -120,7 +120,7 @@ class NotifyHandler:
         
         if contents and interaction:
             for content in contents:
-                await interaction.response.send_message(ephemeral=True, embed=content['embed'], content=content['message'])
+                await interaction.response.send_message(embed=content['embed'], content=content['message'])
         elif contents and not interaction:
             for content in contents:
                 await channel.send(content=content['message'], embed=content['embed'])
