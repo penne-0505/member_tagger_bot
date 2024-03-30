@@ -1,9 +1,12 @@
 import datetime
+import logging
 
 import discord
+from  colorama import Fore, Style
 
 from db_handler import MemberTaggerNotifyDBHandler, MemberTaggerDBHandler
 
+logging.basicConfig(level=logging.INFO)
 
 class NotifyHandler:
     def __init__(self, guild: discord.Guild | None = None, interaction: discord.Interaction | None = None):
@@ -33,6 +36,7 @@ class NotifyHandler:
                 deadline = datetime.datetime.strptime(deadline, "%Y-%m-%d").replace(tzinfo=timezone)
                 if deadline < now:
                     self.tag_db.untag_member(member_id, thread_id)
+                    logging.info(Fore.GREEN + thread_id + Style.RESET_ALL + 'has been deleted from' + Fore.BLUE + member_id + Style.RESET_ALL)
     
     # 現在参加しているguildとそのメンバーをDBに同期する
     async def notify_member_db_sync(self) -> bool:
@@ -119,8 +123,8 @@ class NotifyHandler:
         if isinstance(target_days, int):
             target_days = [target_days]
         for days in target_days:
-            for data in refined[days].items():
-                await self._notify_for_one_channel(days, data)
+            data = refined[days]
+            await self._notify_for_one_channel(days, data)
     
     async def notify_now_to_channel(self, channel: discord.TextChannel | discord.Thread, interaction: discord.Interaction | None = None):
         if not self.guild:
@@ -131,18 +135,25 @@ class NotifyHandler:
         converted = await self.convert_tagged_threads(threads)
         refined = await self.refine_threads(converted)
         
-        content_0 = [await self._get_notify_content(0, data) for data in refined[0].values()]
-        content_1 = [await self._get_notify_content(1, data) for data in refined[1].values()]
-        content_3 = [await self._get_notify_content(3, data) for data in refined[3].values()]
-        content_5 = [await self._get_notify_content(5, data) for data in refined[5].values()]
-        contents = content_0 + content_1 + content_3 + content_5
+        contents_0 = [await self._get_notify_content(0, data, thread) for thread, data in refined[0].items()]
+        contents_1 = [await self._get_notify_content(1, data, thread) for thread, data in refined[1].items()]
+        contents_3 = [await self._get_notify_content(3, data, thread) for thread, data in refined[3].items()]
+        contents_5 = [await self._get_notify_content(5, data, thread) for thread, data in refined[5].items()]
+        contents = contents_0 + contents_1 + contents_3 + contents_5
         
+
         if contents and interaction:
-            for content in contents:
-                await interaction.response.send_message(embed=content['embed'], content=content['message'])
+            embeds = [content['embed'] for content in contents]
+            messages = [content['message'] for content in contents]
+            formatted_message = str(set([message for message in messages if message])).replace('{', '').replace('}', '').replace("'", '')
+            await interaction.response.send_message(embeds=embeds, content=formatted_message)
+        
         elif contents and not interaction:
-            for content in contents:
-                await channel.send(content=content['message'], embed=content['embed'])
+            embeds = [content['embed'] for content in contents]
+            messages = [content['message'] for content in contents]
+            formatted_message = str(set([message for message in messages if message])).replace('{', '').replace('}', '').replace("'", '')
+            await channel.send(embeds=embeds, content=formatted_message)
+        
         elif not contents and interaction:
             await interaction.response.send_message(ephemeral=True, delete_after=5.0, embed=discord.Embed(title='通知するものがありませんでした。', color=discord.Color.blue()))
         elif not contents and not interaction:
@@ -153,7 +164,6 @@ class NotifyHandler:
     # 呼び出す側がループを回す
     async def _notify_for_one_channel(self, days: int, data: dict[discord.Thread | discord.TextChannel, dict[str, list[discord.Member] | datetime.datetime]]) -> dict[str, discord.Embed | str]:
         for thread, data in data.items():
-            print(thread, data)
             content = await self._get_notify_content(days, data)
             embed = content['embed']
             message = content['message']
@@ -161,15 +171,29 @@ class NotifyHandler:
         return {'embed': embed, 'message': message}
     
     # 呼び出す側がループを回す
-    async def _get_notify_content(self, days: int, data: dict[str, list[discord.Member] | datetime.datetime]) -> dict[str, discord.Embed | str]:
+    async def _get_notify_content(
+        self, 
+        days: int,
+        data: dict[str, list[discord.Member] | datetime.datetime], 
+        thread: discord.Thread | None = None
+        ) -> dict[str, discord.Embed | str]:
+        # threadを指定した場合は、threadのメンションをつける
+        
         members = data['members']
         deadline = data['deadline']
         deadline = deadline.strftime('%Y-%m-%d') if deadline else '未設定'
         member_mentions = [member.mention for member in members]
-        embed = discord.Embed(
-            title='今日が提出期限です！' if days == 0 else f'提出期限が{days}日後です',
-            description=f'提出期限 : {deadline}\n提出者 : {", ".join(member_mentions)}',
-            color=discord.Color.green()
-        )
+        if thread:
+            embed = discord.Embed(
+                title=f'今日が提出期限です！' if days == 0 else f'提出まで{days}日です',
+                description=f'提出対象 : {thread.mention}\n提出期限 : {deadline}\n提出者 : {", ".join(member_mentions)}',
+                color=discord.Color.blue()
+            )
+        else:
+            embed = discord.Embed(
+                title='今日が提出期限です！' if days == 0 else f'提出まで{days}日です',
+                description=f'提出期限 : {deadline}\n提出者 : {", ".join(member_mentions)}',
+                color=discord.Color.blue()
+            )
         message = ', '.join(member_mentions)
         return {'embed': embed, 'message': message}
