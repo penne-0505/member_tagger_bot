@@ -128,18 +128,14 @@ class Client(discord.Client):
     
     @tasks.loop(hours=24)
     async def notify_very_day(self):
-        # dbからguild_idのリストを取得
         guild_ids = self.notify_handler.db.get_guilds()
-        # idをguild(obj)に変換
         guilds = [self.get_guild(guild_id) for guild_id in guild_ids]
-        # guildごとに通知を送信
         for guild in guilds:
             self.notify_handler.guild = guild
             await self.notify_handler.notify_now([0])
     
     @tasks.loop(hours=24)
     async def notify_prior_day(self):
-        # notify_very_dayと同じ
         guild_ids = self.notify_handler.db.get_guilds()
         guilds = [self.get_guild(guild_id) for guild_id in guild_ids]
         for guild in guilds:
@@ -155,7 +151,7 @@ tree = discord.app_commands.CommandTree(client)
 
 @tree.command(name='ping', description='テスト用の情報を返します')
 async def ping_command(interaction: discord.Interaction):
-    await interaction.response.send_message(ephemeral=True, embed=EmbedHandler(interaction).get_embed_ping(), content=str(MemberTaggerNotifyDBHandler().get_notify_state(interaction.guild.id, interaction.user.id)))
+    await interaction.response.send_message(ephemeral=True, embed=EmbedHandler(interaction).get_embed_ping())
 
 @tree.command(name='help', description='コマンド一覧を表示します')
 async def help(interaction: discord.Interaction):
@@ -195,7 +191,7 @@ async def notify_toggle_command(interaction: discord.Interaction):
     await interaction.response.send_message(ephemeral=True, view=NotifyToggleView(label='切り替える'), embed=EmbedHandler(interaction).get_embed_notify_toggle(1, current_notify_state))
     del notify_db_handler
 
-@tree.command(name='notify_now', description='タグ付けされたメンバーに、今すぐ通知を送ります（通常は毎日12時, 24時に自動で送信されます）')
+@tree.command(name='notify_now', description='タグ付けされたメンバーに、今すぐ通知を送ります。send_hereをTrueにすると、このチャンネルにまとめて通知を送ります。')
 async def notify_now_command(interaction: discord.Interaction, send_here: bool = False):
     notify_handler = client.notify_handler
     notify_handler.guild = interaction.guild
