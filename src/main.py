@@ -10,7 +10,7 @@ from colorama import Fore, Style
 
 from db_handler import MemberTaggerNotifyDBHandler, MemberTaggerDBHandler
 from components.embeds import EmbedHandler
-from components.views import TagMemberView1, UntagMemberView1, GetTaggedthreadsView, GetTaggedMembersView
+from components.views import TagMemberView1, UntagMemberView1, GetTaggedthreadsView, GetTaggedMembersView, NotifyToggleView
 from notify_handler import NotifyHandler
 
 
@@ -192,7 +192,7 @@ async def all_tagged_members_command(interaction: discord.Interaction):
 async def notify_toggle_command(interaction: discord.Interaction):
     notify_db_handler = MemberTaggerNotifyDBHandler()
     current_notify_state = notify_db_handler.get_notify_state(interaction.guild.id, interaction.user.id)
-    await interaction.response.send_message(ephemeral=True, embed=EmbedHandler(interaction).get_embed_notify_toggle(1, current_notify_state))
+    await interaction.response.send_message(ephemeral=True, view=NotifyToggleView(), embed=EmbedHandler(interaction).get_embed_notify_toggle(1, current_notify_state))
     del notify_db_handler
 
 @tree.command(name='notify_now', description='タグ付けされたメンバーに、今すぐ通知を送ります（通常は毎日12時, 24時に自動で送信されます）')
@@ -201,7 +201,7 @@ async def notify_now_command(interaction: discord.Interaction, send_here: bool =
     notify_handler.guild = interaction.guild
     await notify_handler.notify_now_to_channel(interaction.channel, interaction) if send_here else await notify_handler.notify_now()
 
-@tree.command(name='invite', description='このBotの招待リンクを表示します')
+@tree.command(name='invite_url', description='このBotの招待リンクを表示します')
 async def invite_command(interaction: discord.Interaction):
     await interaction.response.send_message(ephemeral=True, embed=EmbedHandler(interaction).get_embed_invite(1))
 

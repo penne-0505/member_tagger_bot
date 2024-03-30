@@ -3,16 +3,18 @@ import datetime
 import discord
 
 from components.embeds import EmbedHandler
-from db_handler import MemberTaggerDBHandler as DBHandler
+from db_handler import MemberTaggerDBHandler, MemberTaggerNotifyDBHandler
 
 # ? クラス側で__new__でシングルトンにしたほうがいい？
-handler = DBHandler()
+# TODO: インスタンスの管理、リソース管理をもっと考える
+db_handler = MemberTaggerDBHandler()
+notify_handler = MemberTaggerNotifyDBHandler()
 
+# FIXME: もっといい変数名と仕組み
 select_types = [
     discord.ChannelType.public_thread,
     discord.ChannelType.private_thread,
 ]
-# FIXME: decide better name of me :(
 select_types_for_tagged_mem = [
     discord.ChannelType.public_thread,
     discord.ChannelType.private_thread,
@@ -35,7 +37,7 @@ class ChannelSelect(discord.ui.ChannelSelect):
         if self.current_mode == 'tag':
             await interaction.response.edit_message(view=TagMemberView2(channels=channels), embed=EmbedHandler(interaction).get_embed_tag(2))
         elif self.current_mode == 'untag':
-            members = handler.get_tagged_members(str(channels[0]))
+            members = db_handler.get_tagged_members(str(channels[0]))
             await interaction.response.edit_message(view=UntagMemberView2(channels=channels), embed=EmbedHandler(interaction).get_embed_untag(2, members))
         else:
             raise ValueError('current_mode must be either "tag" or "untag"')
@@ -61,7 +63,7 @@ class MemberSelect(discord.ui.UserSelect):
             try:
                 for member in members:
                     for channel in self.channels:
-                        handler.untag_member(member, channel)
+                        db_handler.untag_member(member, channel)
                 await interaction.response.edit_message(view=None, embed=EmbedHandler(interaction).get_embed_untag(3))
             except Exception as e:
                 await interaction.response.edit_message(view=None, embed=EmbedHandler(interaction).get_embed_untag(0))
@@ -94,7 +96,7 @@ class DeadlineSelect(discord.ui.Select):
         try:
             for member in self.members:
                 for channel in self.channels:
-                    handler.tag_member(member, channel, deadline)
+                    db_handler.tag_member(member, channel, deadline)
             await interaction.response.edit_message(view=None, embed=EmbedHandler(interaction).get_embed_tag(4))
         except Exception as e:
             await interaction.response.edit_message(view=None, embed=EmbedHandler(interaction).get_embed_tag(0))
@@ -112,7 +114,7 @@ class GetTaggedthreadsSelect(discord.ui.UserSelect):
     
     async def callback(self, interaction: discord.Interaction):
         selected_member = str(interaction.data['values'][0])
-        threads = handler.get_tagged_threads(selected_member)
+        threads = db_handler.get_tagged_threads(selected_member)
         await interaction.response.edit_message(embed=EmbedHandler(interaction).get_embed_get_tagged_threads(2, threads))
 
 
@@ -129,7 +131,7 @@ class GetTaggedMembersSelect(discord.ui.ChannelSelect):
     
     async def callback(self, interaction: discord.Interaction):
         target_channels = str(interaction.data['values'][0])
-        tagged_members = handler.get_tagged_members(target_channels)
+        tagged_members = db_handler.get_tagged_members(target_channels)
         await interaction.response.edit_message(embed=EmbedHandler(interaction).get_embed_get_tagged_members(2, tagged_members))
 
 
@@ -141,6 +143,21 @@ class CancelButton(discord.ui.Button):
     
     async def callback(self, interaction: discord.Interaction):
         await interaction.response.edit_message(view=discord.abc.MISSING, embed=EmbedHandler(interaction).get_embed_cancel())
+
+class ConfirmButton(discord.ui.Button):
+    def __init__(self, current_mode: str):
+        super().__init__(label='OK', style=discord.ButtonStyle.primary, row=0)
+        self.interaction_check = interaction_check
+        self.on_error = on_error
+        self.current_mode = str(current_mode)
+    
+    async def callback(self, interaction: discord.Interaction):
+        # TODO: 処理系は別の関数に移す
+        if self.current_mode == 'notify_toggle':
+            modified_state = notify_handler.toggle_notify_state(interaction.guild.id, interaction.user.id)
+            await interaction.response.edit_message(view=None, embed=EmbedHandler(interaction).get_embed_notify_toggle(step=2, current_state=modified_state))
+        else:
+            pass
 
 
 async def interaction_check(self, interaction: discord.Interaction):
@@ -154,6 +171,7 @@ async def on_error(self, interaction: discord.Interaction, error: Exception=None
     return interaction.response.send_message(ephemeral=True, view=None, embed=EmbedHandler(interaction).get_embed_error())
 
 
+# TODO: これらのViewをもっと綺麗に書くか、EmbedHandlerみたいに単一クラスにまとめる
 class TagMemberView1(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=60)
@@ -197,4 +215,11 @@ class GetTaggedMembersView(discord.ui.View):
     def __init__(self):
         super().__init__(timeout=60)
         self.add_item(GetTaggedMembersSelect())
+        self.add_item(CancelButton())
+
+
+class NotifyToggleView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=60)
+        self.add_item(ConfirmButton(current_mode='notify_toggle'))
         self.add_item(CancelButton())
