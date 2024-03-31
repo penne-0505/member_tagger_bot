@@ -75,12 +75,12 @@ class EmbedHandler:
                 tagged_members.append(self.interaction.guild.get_member(int(member_id)))
             
             if not tagged_members:
-                embed = discord.Embed(title='取得結果：', description='タグ付けされたメンバーはいません�����した', color=discord.Color.green())
+                embed = discord.Embed(title='取得結果：', description='タグ付けされたメンバーはいませんでした', color=discord.Color.green())
                 return embed
             
             embed = discord.Embed(
                 title='2. メンバーを選択',
-                description=f'投稿からタグ付けを解除するメンバーを選択してください\n\nタグ付けされているメンバー: ' + '\n'.join([f'{member.mention}' for member in tagged_members]),
+                description=f'投稿からタグ付けを解除するメンバーを選択してください\n\n現在タグ付けされているメンバー:\n' + '\n'.join([f'{member.mention}' for member in tagged_members]),
                 color=discord.Color.blue()
             )
         elif step == 3:
