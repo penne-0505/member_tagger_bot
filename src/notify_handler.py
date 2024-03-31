@@ -163,12 +163,14 @@ class NotifyHandler:
     
     # 呼び出す側がループを回す
     async def _notify_for_one_channel(self, days: int, data: dict[discord.Thread | discord.TextChannel, dict[str, list[discord.Member] | datetime.datetime]]) -> dict[str, discord.Embed | str]:
-        for thread, data in data.items():
-            content = await self._get_notify_content(days, data)
-            embed = content['embed']
-            message = content['message']
-            await thread.send(content=message, embed=embed)
-        return {'embed': embed, 'message': message}
+        try:
+            for thread, data in data.items():
+                content = await self._get_notify_content(days, data)
+                embed = content['embed']
+                message = content['message']
+                await thread.send(content=message, embed=embed)
+        except Exception as e:
+            logging.error(e)
     
     # 呼び出す側がループを回す
     async def _get_notify_content(
