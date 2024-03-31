@@ -271,7 +271,7 @@ class EmbedHandler:
     def get_embed_success(self, task: str = None, title: str = None, description: str = None):
         task = task if task else '処理'
         return discord.Embed(
-            title=f'{task}が完了しまし���' if not title else title,
+            title=f'{task}が完了しました' if not title else title,
             description=None if not description else description,
             color=discord.Color.green()
         )
