@@ -160,8 +160,8 @@ class ConfirmButton(discord.ui.Button):
 
 
 class UrlButton(discord.ui.Button):
-    def __init__(self, url: str,  style: discord.ButtonStyle.link, label: str = 'リンク',):
-        super().__init__(label=label, style=style, url=url)
+    def __init__(self, url: str, label: str = 'リンク',):
+        super().__init__(label=label, url=url, style=discord.ButtonStyle.link, row=0)
         self.interaction_check = interaction_check
         self.on_error = on_error
     
