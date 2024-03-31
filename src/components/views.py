@@ -55,7 +55,6 @@ class MemberSelect(discord.ui.UserSelect):
         self.on_error = on_error
     
     async def callback(self, interaction: discord.Interaction):
-        global members
         members = interaction.data['values']
         if self.current_mode == 'tag':
             await interaction.response.edit_message(view=TagMemberView3(channels=self.channels, members=members), embed=EmbedHandler(interaction).get_embed_tag(3))
