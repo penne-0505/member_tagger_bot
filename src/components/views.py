@@ -159,6 +159,16 @@ class ConfirmButton(discord.ui.Button):
             pass
 
 
+class UrlButton(discord.ui.Button):
+    def __init__(self, url: str,  style: discord.ButtonStyle.link, label: str = 'リンク',):
+        super().__init__(label=label, style=style, url=url)
+        self.interaction_check = interaction_check
+        self.on_error = on_error
+    
+    async def callback(self, interaction: discord.Interaction):
+        await interaction.response.edit_message(view=None, embed=EmbedHandler(interaction).get_embed_invite(2))
+
+
 async def interaction_check(self, interaction: discord.Interaction):
     if interaction.user == interaction.message.author:
         return True
@@ -221,4 +231,11 @@ class NotifyToggleView(discord.ui.View):
     def __init__(self, label: str = 'OK'):
         super().__init__(timeout=60)
         self.add_item(ConfirmButton(current_mode='notify_toggle', label=label))
+        self.add_item(CancelButton())
+
+
+class InviteView(discord.ui.View):
+    def __init__(self, url: str, label: str = 'リンク'):
+        super().__init__(timeout=60)
+        self.add_item(UrlButton(url=url, label=label))
         self.add_item(CancelButton())

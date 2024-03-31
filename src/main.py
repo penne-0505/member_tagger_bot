@@ -10,7 +10,7 @@ from colorama import Fore, Style
 
 from db_handler import MemberTaggerNotifyDBHandler, MemberTaggerDBHandler
 from components.embeds import EmbedHandler
-from components.views import TagMemberView1, UntagMemberView1, GetTaggedthreadsView, GetTaggedMembersView, NotifyToggleView
+from components.views import TagMemberView1, UntagMemberView1, GetTaggedthreadsView, GetTaggedMembersView, NotifyToggleView, InviteView
 from notify_handler import NotifyHandler
 
 
@@ -188,7 +188,8 @@ async def notify_now_command(interaction: discord.Interaction, send_here: bool =
 
 @tree.command(name='invite_url', description='このBotの招待リンクを表示します')
 async def invite_command(interaction: discord.Interaction):
-    await interaction.response.send_message(ephemeral=True, embed=EmbedHandler(interaction).get_embed_invite(1))
+    url = discord.utils.oauth_url(interaction.application_id, permissions=discord.Permissions(permissions=8))
+    await interaction.response.send_message(ephemeral=True, view=InviteView(url=url), embed=EmbedHandler(interaction).get_embed_invite(1))
 
 
 secret_token = str(os.getenv('DISCORD_BOT_TOKEN_MT'))

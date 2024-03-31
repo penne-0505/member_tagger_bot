@@ -245,6 +245,11 @@ class EmbedHandler:
                 description=f'`{url}`',
                 color=discord.Color.blue()
             )
+        elif step == 2:
+            embed = discord.Embed(
+                title='リンクを表示しました',
+                color=discord.Color.green()
+            )
         else:
             if not step:
                 embed = self.get_embed_error(title='エラーが発生しました (step is None or invalid)')
