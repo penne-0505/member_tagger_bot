@@ -68,25 +68,14 @@ class Client(discord.Client):
         # 時刻を算出
         time_to_notify_dt = datetime.datetime.now(timezone) + time_to_notify
 
-        # タスクを始める時に使うモードを決定
-        notify_mode = 'prior' if time_to_notify_dt.time() == datetime.time(12, 0) else 'very'
-
         time_to_notify_dt = Fore.LIGHTMAGENTA_EX + datetime.datetime.strftime(time_to_notify_dt, '%Y/%m/%d %H:%M:%S') + Style.RESET_ALL + Fore.GREEN
         logging.info(Fore.GREEN + f'Wait for {time_to_notify_dt}' + Style.RESET_ALL)
-        logging.info(Fore.GREEN + f'Notify mode: {notify_mode}' + Style.RESET_ALL)
 
         # 算出した時間まで待機
         await asyncio.sleep(time_to_notify.total_seconds())
 
         # 通知タスクを開始
-        if notify_mode == 'prior':
-            self.notify_prior_day.start()
-            logging.info(Fore.GREEN + 'Notify task started' + Style.RESET_ALL)
-        elif notify_mode == 'very':
-            self.notify_very_day.start()
-            logging.info(Fore.GREEN + 'Notify task started' + Style.RESET_ALL)
-        else:
-            logging.error(Fore.RED + 'Failed to start notify tasks' + Style.RESET_ALL)
+        self.notify.start()
 
     # ギルド参加時にDBとメンバーを同期
     async def on_guild_join(self, guild: discord.Guild):
@@ -126,21 +115,21 @@ class Client(discord.Client):
         )
         logging.info(Fore.GREEN + f'Presence updated at {now_fmt_ymd_hms}' + Style.RESET_ALL)
     
-    @tasks.loop(hours=24)
-    async def notify_very_day(self):
+    @tasks.loop(hours=12)
+    async def notify(self):
         guild_ids = self.notify_handler.db.get_guilds()
         guilds = [self.get_guild(guild_id) for guild_id in guild_ids]
-        for guild in guilds:
-            self.notify_handler.guild = guild
-            await self.notify_handler.notify_now([0])
-    
-    @tasks.loop(hours=24)
-    async def notify_prior_day(self):
-        guild_ids = self.notify_handler.db.get_guilds()
-        guilds = [self.get_guild(guild_id) for guild_id in guild_ids]
-        for guild in guilds:
-            self.notify_handler.guild = guild
-            await self.notify_handler.notify_now([1, 3, 5])
+        now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
+        if now.time() == datetime.time(12, 0):
+            for guild in guilds:
+                self.notify_handler.guild = guild
+                await self.notify_handler.notify_now([1, 3, 5])
+        elif now.time() == datetime.time(0, 0):
+            for guild in guilds:
+                self.notify_handler.guild = guild
+                await self.notify_handler.notify_now([0])
+        else:
+            return
 
 
 client = Client()
