@@ -169,6 +169,8 @@ class NotifyHandler:
                 embed = content['embed']
                 message = content['message']
                 await thread.send(content=message, embed=embed)
+                sent_members = ', '.join([member.name for member in data['members']])
+                logging.info(Fore.GREEN + sent_members + Style.RESET_ALL + 'has been notified in' + Fore.BLUE + thread.name + Style.RESET_ALL)
         except Exception as e:
             logging.error(e)
     
