@@ -120,16 +120,16 @@ class Client(discord.Client):
         guild_ids = self.notify_handler.db.get_guilds()
         guilds = [self.get_guild(guild_id) for guild_id in guild_ids]
         now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
-        if now.time() == datetime.time(12, 0):
+        if now.hour == 12:
             for guild in guilds:
                 self.notify_handler.guild = guild
                 await self.notify_handler.notify_now([1, 3, 5])
-        elif now.time() == datetime.time(0, 0):
+        elif now.hour == 0:
             for guild in guilds:
                 self.notify_handler.guild = guild
                 await self.notify_handler.notify_now([0])
         else:
-            return
+            raise ValueError('mode must be either "prior" or "very"')
 
 
 client = Client()
