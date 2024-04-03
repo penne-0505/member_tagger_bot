@@ -115,21 +115,14 @@ class Client(discord.Client):
         )
         logging.info(Fore.GREEN + f'Presence updated at {now_fmt_ymd_hms}' + Style.RESET_ALL)
     
-    @tasks.loop(hours=12)
+    @tasks.loop(hours=24)
     async def notify(self):
         guild_ids = self.notify_handler.db.get_guilds()
         guilds = [self.get_guild(guild_id) for guild_id in guild_ids]
-        now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
-        if now.hour == 12:
-            for guild in guilds:
-                self.notify_handler.guild = guild
-                await self.notify_handler.notify_now([1, 3, 5])
-        elif now.hour == 0:
-            for guild in guilds:
-                self.notify_handler.guild = guild
-                await self.notify_handler.notify_now([0])
-        else:
-            raise ValueError('mode must be either "prior" or "very"')
+        dates = [i for i in range(16)]
+        for guild in guilds:
+            self.notify_handler.guild = guild
+            await self.notify_handler.notify_now(dates)
 
 
 client = Client()

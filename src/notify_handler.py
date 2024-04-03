@@ -94,14 +94,13 @@ class NotifyHandler:
         self,
         threads: dict[discord.Thread | discord.TextChannel, dict[str, list[discord.Member] | datetime.datetime]]
         ) -> dict[int, dict[discord.Thread | discord.TextChannel, dict[str, list[discord.Member] | datetime.datetime]]]:
-        '''return threads that deadline is within 5, 3, 1, 0 day(s)\nreturn {days: {thread: {'members': [member, ...], 'deadline': deadline}}}'''
         if not self.guild:
             raise ValueError('guild is not set')
         
         timezone = datetime.timezone(datetime.timedelta(hours=9)) # JST
         now = datetime.datetime.now(timezone)
-        # threadsを日付ごとに整理(5, 3, 1, 0以外は削除)
-        refined = {5: {}, 3: {}, 1: {}, 0: {}}
+        # threadsを日付ごとに整理(15~0日前まで)
+        refined = {i: {} for i in range(16)}
         for thread, data in threads.items():
             deadline = data['deadline']
             if not deadline:
@@ -112,7 +111,6 @@ class NotifyHandler:
         return refined
 
     async def notify_now(self, target_days: int | list[int] = 0):
-        '''target_days expects 0, 1, 3, 5\nif target_days is not given, notify all threads'''
         if not self.guild:
             raise ValueError('guild is not set')
         
