@@ -29,7 +29,6 @@ intents = discord.Intents.all()
 class Client(discord.Client):
     def __init__(self):
         super().__init__(intents=intents)
-        # 毎回確実にコマンドを同期させるために、syncedフラグを手動で設定
         self.synced = False
         self.notify_handler = NotifyHandler()
     
