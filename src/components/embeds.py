@@ -287,3 +287,10 @@ class EmbedHandler:
             description='UIの操作はコマンド実行者のみが行えます' if not description else description,
             color=discord.Color.red()
         )
+    
+    def get_embed_finished(self, title: str = None, description: str = None):
+        return discord.Embed(
+            title='操作が完了しました' if not title else title,
+            description=None if not description else description,
+            color=discord.Color.green()
+        )
