@@ -34,6 +34,7 @@ class NotifyHandler:
         for member_id, thread_dict in threads.items():
             for thread_id, deadline in thread_dict.items():
                 deadline = datetime.datetime.strptime(deadline, "%Y-%m-%d").replace(tzinfo=timezone)
+                deadline = deadline.replace(day=deadline.day + 1)
                 if deadline < now:
                     self.tag_db.untag_member(member_id, thread_id)
                     logging.info(Fore.GREEN + thread_id + Style.RESET_ALL + 'has been deleted from' + Fore.BLUE + member_id + Style.RESET_ALL)
