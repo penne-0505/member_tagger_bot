@@ -8,7 +8,7 @@ from discord import app_commands
 from discord.ext import tasks
 from colorama import Fore, Style
 
-from db_handler import MemberTaggerNotifyDBHandler, MemberTaggerDBHandler
+from db_handler import MemberTaggerNotifyDBHandler
 from components.embeds import EmbedHandler
 from components.views import TagMemberView1, UntagMemberView1, GetTaggedthreadsView, GetTaggedMembersView, NotifyToggleView, InviteView
 from notify_handler import NotifyHandler
@@ -19,9 +19,11 @@ from notify_handler import NotifyHandler
 # TODO: client?のloggingをオーバーライドして、ログが重複しないようにする
 # TODO: permissionの適切なスコープ設定
 # TODO: interactionのextrasを使って情報のやり取り出来る情報が無いか見てみる
-# ! 全体的な処理構造を見直す(特にViewやEmbed、そこでやりとりするデータの流れ)
+# TODO: 全体的な処理構造を見直す(特にViewやEmbed、そこでやりとりするデータの流れ)
+# TODO: delete_afterなどを使って、前日の通知が消えるようにする(そもそもdelete_afterはそんなに長期間待機出来るのか？)
+# TODO: poetryでパッケージ管理しよう
 
-# !FIXME: formatの設定が反映されない
+# FIXME: formatの設定が反映されない
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s   %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 
 intents = discord.Intents.all()
