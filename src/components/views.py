@@ -209,7 +209,6 @@ class UntagMemberView2(discord.ui.View):
     def __init__(self, channels: list[str]):
         super().__init__(timeout=60)
         self.add_item(MemberSelect(current_mode='untag', channels=channels))
-        self.add_item(ConfirmButton(label='完了'))
 
 
 class GetTaggedthreadsView(discord.ui.View):
