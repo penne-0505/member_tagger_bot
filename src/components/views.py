@@ -114,8 +114,7 @@ class GetTaggedthreadsSelect(discord.ui.UserSelect):
     async def callback(self, interaction: discord.Interaction):
         selected_member = str(interaction.data['values'][0])
         threads = db_handler.get_tagged_threads(selected_member)
-        view = self.view.add_item(ConfirmButton(label='完了', row=1)) if self.view else None
-        await interaction.response.edit_message(view=view, embed=EmbedHandler(interaction).get_embed_get_tagged_threads(2, threads))
+        await interaction.response.edit_message(view=None, embed=EmbedHandler(interaction).get_embed_get_tagged_threads(2, threads))
 
 
 class GetTaggedMembersSelect(discord.ui.ChannelSelect):
@@ -132,13 +131,12 @@ class GetTaggedMembersSelect(discord.ui.ChannelSelect):
     async def callback(self, interaction: discord.Interaction):
         target_channels = str(interaction.data['values'][0])
         tagged_members = db_handler.get_tagged_members(target_channels)
-        view = self.view.add_item(ConfirmButton(label='完了')) if self.view else None
-        await interaction.response.edit_message(view=view, embed=EmbedHandler(interaction).get_embed_get_tagged_members(2, tagged_members))
+        await interaction.response.edit_message(view=None, embed=EmbedHandler(interaction).get_embed_get_tagged_members(2, tagged_members))
 
 
 class CancelButton(discord.ui.Button):
     def __init__(self):
-        super().__init__(label='キャンセル', style=discord.ButtonStyle.secondary)
+        super().__init__(label='キャンセル', style=discord.ButtonStyle.secondary, row=1)
         self.interaction_check = interaction_check
         self.on_error = on_error
     
@@ -147,7 +145,7 @@ class CancelButton(discord.ui.Button):
 
 class ConfirmButton(discord.ui.Button):
     def __init__(self, current_mode: str | None = None, label: str = 'OK'):
-        super().__init__(label=label, style=discord.ButtonStyle.primary, row=0)
+        super().__init__(label=label, style=discord.ButtonStyle.primary, row=1)
         self.interaction_check = interaction_check
         self.on_error = on_error
         self.current_mode = str(current_mode)
@@ -199,7 +197,6 @@ class TagMemberView3(discord.ui.View):
     def __init__(self, channels: list[str], members: list[str]):
         super().__init__(timeout=60)
         self.add_item(DeadlineSelect(channels=channels, members=members))
-        self.add_item(ConfirmButton(label='完了'))
 
 
 class UntagMemberView1(discord.ui.View):
