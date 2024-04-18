@@ -7,6 +7,7 @@ from db_handler import MemberTaggerDBHandler
 
 # TODO: implement better variable type validation
 
+# ! コマンドが増えていくたびに、EmbedHandlerのメソッドが増えていくので、もっとスマートな方法を考える
 class EmbedHandler:
     def __init__(self, interaction: discord.Interaction):
         self.interaction = interaction
@@ -201,11 +202,20 @@ class EmbedHandler:
             all_threads = self.db_handler.get_all_tagged_threads()
             refined_threads = {member_id: threads for member_id, threads in all_threads.items() if threads}
             description = self.format_member_threads(refined_threads)
-            embed = discord.Embed(
-                title='取得結果：',
-                description=description,
-                color=discord.Color.green()
-            )
+            if description:
+                embed = discord.Embed(
+                    title='取得結果：',
+                    description=description,
+                    color=discord.Color.green()
+                )
+            elif not description:
+                embed = discord.Embed(
+                    title='取得結果：',
+                    description='タグ付けされたメンバーはいませんでした',
+                    color=discord.Color.green()
+                )
+            else:
+                embed = self.get_embed_error(title='エラーが発生しました (unknown error)')
         else:
             if not step:
                 embed = self.get_embed_error(title='エラーが発生しました (step is None or invalid)')
@@ -259,6 +269,8 @@ class EmbedHandler:
                 embed = self.get_embed_error(title='エラーが発生しました (unknown error)')
         return embed
 
+    ############ common embeds ############
+    
     def get_embed_error(self, title: str = None, description: str = None):
         return discord.Embed(
             title='エラーが発生しました (exception error)' if not title else title,
