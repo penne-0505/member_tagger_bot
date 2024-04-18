@@ -239,5 +239,4 @@ class InviteView(discord.ui.View):
     def __init__(self, url: str, label: str = 'リンク'):
         super().__init__(timeout=60)
         self.add_item(UrlButton(url=url, label=label))
-        self.add_item(CancelButton())
         self.add_item(ConfirmButton(label='完了'))

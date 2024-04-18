@@ -241,8 +241,8 @@ class EmbedHandler:
         if step == 1:
             url = discord.utils.oauth_url(self.interaction.application_id, permissions=discord.Permissions(permissions=8))
             embed = discord.Embed(
-                title='招待リンク',
-                description=f'`{url}`',
+                title='招待リンク (スマホなら長押しでコピー)',
+                description=url,
                 color=discord.Color.blue()
             )
         elif step == 2:
