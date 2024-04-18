@@ -71,16 +71,8 @@ class MemberSelect(discord.ui.UserSelect):
 
 
 
-class DeadlineInput(discord.ui.Modal):
-    def __init__(self, channels: list[str], members: list[str]):
-        super().__init__(
-            title='期限の設定',
-            timeout=60
-        )
-        self.channels = channels
-        self.members = members
-        
-        raw_deadline= discord.ui.TextInput(
+class DeadlineInputModal(discord.ui.Modal):
+    raw_deadline = discord.ui.TextInput(
             placeholder='期限を入力してください',
             label='期限',
             style=discord.TextStyle.short,
@@ -88,8 +80,19 @@ class DeadlineInput(discord.ui.Modal):
             max_length=3900,
         )
     
+    def __init__(self, channels: list[str], members: list[str]):
+        super().__init__(
+            title='期限の設定',
+            timeout=60
+        )
+        
+        self.channels = channels
+        self.members = members
+    
     async def on_submit(self, interaction: discord.Interaction):
-        deadline = self.children[0].value
+        deadline = (
+            datetime.datetime.now() + datetime.timedelta(days=float(self.children[0].value))
+            ).strftime('%Y-%m-%d')
         try:
             for member in self.members:
                 for channel in self.channels:
@@ -119,21 +122,22 @@ class DeadlineSelect(discord.ui.Select):
     
     async def callback(self, interaction: discord.Interaction):
 
-        if interaction.data['values'][0] == 0:
-            await interaction.response.send_modal(DeadlineInput(channels=self.channels, members=self.members))
+        if interaction.data['values'][0] == '0':
+            await interaction.response.send_modal(DeadlineInputModal(channels=self.channels, members=self.members))
             return
         else:
             deadline = (
                 datetime.datetime.now() + datetime.timedelta(days=float(interaction.data['values'][0]))
                 ).strftime('%Y-%m-%d')
-        
-        try:
-            for member in self.members:
-                for channel in self.channels:
-                    db_handler.tag_member(member, channel, deadline)
-            await interaction.response.edit_message(view=None, embed=EmbedHandler(interaction).get_embed_tag(4))
-        except Exception as e:
-            await interaction.response.edit_message(view=None, embed=EmbedHandler(interaction).get_embed_tag(0))
+            
+            try:
+                for member in self.members:
+                    for channel in self.channels:
+                        db_handler.tag_member(member, channel, deadline)
+                await interaction.response.edit_message(view=None, embed=EmbedHandler(interaction).get_embed_tag(4))
+            except Exception as e:
+                await interaction.response.edit_message(view=None, embed=EmbedHandler(interaction).get_embed_tag(0))
+
 
 # TODO: 複数のメンバーを選択出来るようにする
 class GetTaggedthreadsSelect(discord.ui.UserSelect):
