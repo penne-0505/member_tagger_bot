@@ -5,10 +5,12 @@ import discord
 from  colorama import Fore, Style
 
 from db_handler import MemberTaggerNotifyDBHandler, MemberTaggerDBHandler
+from src.utils import SingletonMeta
+
 
 logging.basicConfig(level=logging.INFO)
 
-class NotifyHandler:
+class NotifyHandler(metaclass=SingletonMeta):
     def __init__(self, guild: discord.Guild | None = None, interaction: discord.Interaction | None = None):
         if guild or interaction:
             self.guild = guild if guild else interaction.guild
@@ -16,12 +18,6 @@ class NotifyHandler:
         self._interaction = interaction # it wont be used
         self.db = MemberTaggerNotifyDBHandler()
         self.tag_db = MemberTaggerDBHandler()
-    
-    # シングルトンパターン用
-    def __new__(cls, *args, **kwargs):
-        if not hasattr(cls, '_instance'):
-            cls._instance = super().__new__(cls)
-        return cls._instance
     
     # 期限が過ぎたスレッドをDBから削除する
     async def _delete_threads_past_deadline(self):

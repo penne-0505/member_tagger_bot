@@ -4,18 +4,10 @@ from typing import Any
 import discord
 
 from db_handler import MemberTaggerDBHandler
+from src.utils import SingletonMeta
 
 
-class Singleton(type):
-    _instances = {}
-    
-    def __call__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            instance = super().__call__(*args, **kwargs)
-            cls._instances[cls] = instance
-        return cls._instances[cls]
-
-class EmbedHandler(metaclass=Singleton):
+class EmbedHandler(metaclass=SingletonMeta):
     def __init__(self, interaction: discord.Interaction):
         self.interaction = interaction
         self.db_handler = MemberTaggerDBHandler()
