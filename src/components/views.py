@@ -69,6 +69,36 @@ class MemberSelect(discord.ui.UserSelect):
         else:
             raise ValueError('current_mode must be either "tag" or "untag"')
 
+
+
+class DeadlineInput(discord.ui.Modal):
+    def __init__(self, channels: list[str], members: list[str]):
+        super().__init__(
+            title='期限の設定',
+            timeout=60
+        )
+        self.channels = channels
+        self.members = members
+        
+        raw_deadline= discord.ui.TextInput(
+            placeholder='期限を入力してください',
+            label='期限',
+            style=discord.TextStyle.short,
+            min_length=1,
+            max_length=3900,
+        )
+    
+    async def on_submit(self, interaction: discord.Interaction):
+        deadline = self.children[0].value
+        try:
+            for member in self.members:
+                for channel in self.channels:
+                    db_handler.tag_member(member, channel, deadline)
+            await interaction.response.edit_message(view=None, embed=EmbedHandler(interaction).get_embed_tag(4))
+        except Exception as e:
+            await interaction.response.edit_message(view=None, embed=EmbedHandler(interaction).get_embed_tag(0))
+
+
 # TODO: 任意の日数を選択出来るようにする(selectで任意の日数みたいなのを選ばせて、modalで入力させる?)
 class DeadlineSelect(discord.ui.Select):
     def __init__(self, channels: list[str], members: list[str]):
@@ -79,6 +109,7 @@ class DeadlineSelect(discord.ui.Select):
             options=[
                 discord.SelectOption(label='10日後 (Shorts)', emoji='📱', value=10),
                 discord.SelectOption(label='15日後 (Default)', emoji='💻', value=15),
+                discord.SelectOption(label='任意の日付', emoji='🗓️', value=0),
             ]
         )
         self.channels = channels
@@ -88,9 +119,13 @@ class DeadlineSelect(discord.ui.Select):
     
     async def callback(self, interaction: discord.Interaction):
 
-        deadline = (
-            datetime.datetime.now() + datetime.timedelta(days=float(interaction.data['values'][0]))
-            ).strftime('%Y-%m-%d')
+        if interaction.data['values'][0] == 0:
+            await interaction.response.send_modal(DeadlineInput(channels=self.channels, members=self.members))
+            return
+        else:
+            deadline = (
+                datetime.datetime.now() + datetime.timedelta(days=float(interaction.data['values'][0]))
+                ).strftime('%Y-%m-%d')
         
         try:
             for member in self.members:
