@@ -92,9 +92,10 @@ class Client(discord.Client):
         user_name = Fore.BLUE + str(interaction.user.name) + Style.RESET_ALL
         user_id = Fore.BLUE + str(interaction.user.id) + Style.RESET_ALL
         guild = Fore.GREEN + str(interaction.guild.name) + Style.RESET_ALL
+        channel = Fore.GREEN + str(interaction.channel.name) + Style.RESET_ALL
         timezone = datetime.timezone(datetime.timedelta(hours=9)) # JST
         time = Fore.MAGENTA + datetime.datetime.now(timezone).strftime("%Y/%m/%d, %H:%M:%S") + Style.RESET_ALL
-        logging.info(f'{command_name} called by {user_name} ({user_id}) on {guild} at {time}')
+        logging.info(f'{command_name} called by {user_name} ({user_id}) on {guild}, {channel} at {time}')
     
     ############## my utils ##############
     
