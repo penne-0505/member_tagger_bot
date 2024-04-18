@@ -5,18 +5,21 @@ import discord
 
 from db_handler import MemberTaggerDBHandler
 
-# TODO: implement better variable type validation
 
-# ! コマンドが増えていくたびに、EmbedHandlerのメソッドが増えていくので、もっとスマートな方法を考える
-class EmbedHandler:
+class Singleton(type):
+    _instances = {}
+    
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            instance = super().__call__(*args, **kwargs)
+            cls._instances[cls] = instance
+        return cls._instances[cls]
+
+class EmbedHandler(metaclass=Singleton):
     def __init__(self, interaction: discord.Interaction):
         self.interaction = interaction
         self.db_handler = MemberTaggerDBHandler()
     
-    def __new__(cls, *args, **kwargs):
-        if not hasattr(cls, "_instance"):
-            cls._instance = super(EmbedHandler, cls).__new__(cls)
-        return cls._instance
     
     def get_embed_ping(self):
         data = {
@@ -178,6 +181,7 @@ class EmbedHandler:
             else:
                 embed = self.get_embed_error(title='エラーが発生しました (unknown error)')
         return embed
+    
     
     def format_member_threads(self, refined_threads: dict[str, dict[str, str]]):
         def format_thread(thread_id, deadline):
