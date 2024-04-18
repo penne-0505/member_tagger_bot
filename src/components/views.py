@@ -107,14 +107,14 @@ class GetTaggedthreadsSelect(discord.ui.UserSelect):
             placeholder='メンバーを選択してください',
             min_values=1,
             max_values=1,
-            )
+        )
         self.interaction_check = interaction_check
         self.on_error = on_error
     
     async def callback(self, interaction: discord.Interaction):
         selected_member = str(interaction.data['values'][0])
         threads = db_handler.get_tagged_threads(selected_member)
-        view = self.view.add_item(ConfirmButton(label='完了')) if self.view else None
+        view = self.view.add_item(ConfirmButton(label='完了', row=1)) if self.view else None
         await interaction.response.edit_message(view=view, embed=EmbedHandler(interaction).get_embed_get_tagged_threads(2, threads))
 
 
