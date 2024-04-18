@@ -14,7 +14,7 @@ from components.views import TagMemberView1, UntagMemberView1, GetTaggedthreadsV
 from notify_handler import NotifyHandler
 
 
-# TODO: DBのローカル化(sqlite3, mysql ...)？
+# TODO: DBのローカル化(sqlite3, mysql ...)？(もはやjsonでもいいかも)
 # TODO: コメント、docstringの充実化
 # TODO: client?のloggingをオーバーライドして、ログが重複しないようにする
 # TODO: permissionの適切なスコープ設定
