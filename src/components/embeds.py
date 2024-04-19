@@ -4,7 +4,7 @@ from typing import Any
 import discord
 
 from db_handler import MemberTaggerDBHandler
-from src.utils import SingletonMeta
+from utils import SingletonMeta
 
 
 class EmbedHandler(metaclass=SingletonMeta):

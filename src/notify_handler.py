@@ -5,7 +5,7 @@ import discord
 from  colorama import Fore, Style
 
 from db_handler import MemberTaggerNotifyDBHandler, MemberTaggerDBHandler
-from src.utils import SingletonMeta
+from utils import SingletonMeta
 
 
 logging.basicConfig(level=logging.INFO)
