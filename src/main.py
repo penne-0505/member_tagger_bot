@@ -21,10 +21,8 @@ from notify_handler import NotifyHandler
 # TODO: interactionのextrasを使って情報のやり取り出来る情報が無いか見てみる
 # TODO: 全体的な処理構造を見直す(特にViewやEmbed、そこでやりとりするデータの流れ)
 # TODO: delete_afterなどを使って、前日の通知が消えるようにする(そもそもdelete_afterはそんなに長期間待機出来るのか？)
-# TODO: poetryでパッケージ管理しよう
+# TODO: poetryでパッケージ管理
 
-# FIXME: formatの設定が反映されない
-logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s   %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 
 intents = discord.Intents.all()
 
