@@ -60,10 +60,9 @@ class Client(discord.Client):
         timezone = datetime.timezone(datetime.timedelta(hours=9)) # JST
         today = datetime.datetime.now(timezone).date()
         midnight = datetime.datetime.combine(today, datetime.time(0, 0), tzinfo=timezone)
-        noon = datetime.datetime.combine(today, datetime.time(12, 0), tzinfo=timezone)
 
         # 通知タスクを開始するまでの時間を計算
-        time_to_notify = noon - datetime.datetime.now(timezone) if datetime.datetime.now(timezone) < noon else midnight + datetime.timedelta(days=1) - datetime.datetime.now(timezone)
+        time_to_notify = midnight + datetime.timedelta(days=1) - datetime.datetime.now(timezone)
         # 時刻を算出
         time_to_notify_dt = datetime.datetime.now(timezone) + time_to_notify
 
